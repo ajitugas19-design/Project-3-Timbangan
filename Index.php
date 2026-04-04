@@ -85,7 +85,14 @@ button:hover {
     <img src="Img/Logo.png" class="logo" alt="Logo">
     <h1>Login</h1>
 
-    <form action="Dasboard/Navbar.php" method="post">
+<form action="Dasboard/Navbar.php" method="post">
+    <?php
+    session_start();
+    if (isset($_GET['error'])) {
+        echo '<p style="color:red;">' . htmlspecialchars($_GET['error']) . '</p>';
+    }
+    ?>
+
     <div class="input-group">
         <label>Username</label>
 <input type="text" name="username" placeholder="Masukkan username">

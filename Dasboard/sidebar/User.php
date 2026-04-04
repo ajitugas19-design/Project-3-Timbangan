@@ -210,7 +210,7 @@ body {
 <body>
 
 <!-- TAMBAH USER BUTTON -->
-<button class="add-user-btn" onclick="openForm()">➕ Tambah User</button>
+<button class="add-user-btn" onclick="openForm('tambah')">➕ Tambah User Baru</button>
 
 <!-- LIST USER -->
 <div id="userList">
@@ -240,8 +240,12 @@ body {
 <div class="form-slide" id="formSlide">
     <h4 id="formTitle">Tambah User</h4>
 
+    <input type="text" id="nama" placeholder="Nama Lengkap">
+    <input type="text" id="sebagai" placeholder="Sebagai (misal: Admin)">
     <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
+    <input type="text" id="foto" placeholder="Foto URL (default.jpg)">
+    <input type="text" id="keterangan" placeholder="Keterangan (Aktif/Nonaktif)">
 
     <button class="btn btn-save" onclick="simpanUser()">💾 Simpan</button>
     <br><br>
@@ -249,15 +253,47 @@ body {
 </div>
 
 <script>
-// Global scope for injected context
-window.editTarget = null;
+// Load users on page load
+async function loadUsers() {
+    try {
+        const response = await fetch('../api/users.php?action=list');
+        const users = await response.json();
+        const userList = document.getElementById('userList');
+        userList.innerHTML = '';
 
-window.openForm = function(){
+        users.forEach(user => {
+            const initials = user.nama.charAt(0).toUpperCase();
+            const card = `
+                <div class="user-card" data-id="${user.id_user}">
+                    <div class="user-left">
+                        <div class="user-img">${initials}</div>
+                        <div class="user-info">
+                            <b>${user.nama}</b>
+                            <p>${user.sebagai}</p>
+                        </div>
+                    </div>
+                    <div class="user-action">
+                        <button class="edit-btn" onclick="editUser(${user.id_user}, '${user.nama}')">✏️ Edit</button>
+                        <button class="delete-btn" onclick="hapusUser(${user.id_user})">🗑️ Hapus</button>
+                    </div>
+                </div>
+            `;
+            userList.insertAdjacentHTML('beforeend', card);
+        });
+    } catch (e) {
+        console.error('Error loading users:', e);
+    }
+}
+
+// Global scope for injected context
+let editTargetId = null;
+
+window.openForm = function(mode = 'tambah'){
     const formSlide = document.getElementById("formSlide");
     const overlay = document.getElementById("overlay");
     if(formSlide) formSlide.classList.add("active");
     if(overlay) overlay.classList.add("active");
-    console.log('openForm called');
+    document.getElementById("formTitle").innerText = mode === 'edit' ? 'Edit User' : 'Tambah User Baru';
 };
 
 window.closeForm = function(){
@@ -265,72 +301,102 @@ window.closeForm = function(){
     const overlay = document.getElementById("overlay");
     if(formSlide) formSlide.classList.remove("active");
     if(overlay) overlay.classList.remove("active");
-    const username = document.getElementById("username");
-    const password = document.getElementById("password");
-    const formTitle = document.getElementById("formTitle");
-    if(username) username.value = "";
-    if(password) password.value = "";
-    window.editTarget = null;
-    if(formTitle) formTitle.innerText = "Tambah User";
+    if(!editTargetId) {
+        // Reset untuk tambah baru
+        document.getElementById("nama").value = "";
+        document.getElementById("sebagai").value = "";
+        document.getElementById("username").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("foto").value = "";
+        document.getElementById("keterangan").value = "Aktif";
+    }
+    document.getElementById("formTitle").innerText = "Tambah User Baru";
+    editTargetId = null;
 };
 
-window.simpanUser = function(){
-    const usernameEl = document.getElementById("username");
-    if(!usernameEl) return;
-    let username = usernameEl.value;
-    if(username === ""){
-        alert("Username wajib diisi!");
+window.simpanUser = async function(){
+    const namaEl = document.getElementById("nama");
+    const sebagaiEl = document.getElementById("sebagai");
+    const userEl = document.getElementById("username");
+    const passEl = document.getElementById("password");
+    const fotoEl = document.getElementById("foto");
+    const ketEl = document.getElementById("keterangan");
+    
+    const nama = namaEl.value.trim();
+    if(!nama || !userEl.value.trim()) {
+        alert("Nama & Username wajib diisi!");
         return;
     }
 
-    if(window.editTarget){
-        window.editTarget.querySelector("b").innerText = username;
-        const avatar = window.editTarget.querySelector(".user-img");
-        if(avatar) avatar.textContent = username.charAt(0).toUpperCase();
-    }else{
-        let card = `
-        <div class="user-card">
-            <div class="user-left">
-                <div class="user-img">${username.charAt(0).toUpperCase()}</div>
-                <div class="user-info">
-                    <b>${username}</b>
-                    <p style="font-size:12px;">USER BARU</p>
-                </div>
-            </div>
-            <div class="user-action">
-                <button class="edit-btn" onclick="window.editUser(this)">✏️ Edit</button>
-                <button class="delete-btn" onclick="window.hapusUser(this)">🗑️ Hapus</button>
-            </div>
-        </div>
-        `;
-        document.getElementById("userList").insertAdjacentHTML("afterbegin", card);
-    }
+    try {
+        const data = {
+            nama,
+            sebagai: sebagaiEl.value || 'User',
+            username: userEl.value,
+            password: passEl.value,
+            foto: fotoEl.value || 'default.jpg',
+            keterangan: ketEl.value || 'Aktif'
+        };
+        let url = '../api/users.php?action=' + (editTargetId ? 'edit' : 'add');
+        
+        if(editTargetId) data.id = editTargetId;
 
-    window.closeForm();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if(response.ok) {
+            loadUsers();
+            window.closeForm();
+        } else {
+            const err = await response.text();
+            alert('Error: ' + err);
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+    }
 };
 
-window.editUser = function(btn){
-    const card = btn.closest(".user-card");
-    const namaEl = card.querySelector("b");
-    if(!namaEl) return;
-    let nama = namaEl.innerText;
-    window.editTarget = card;
-    const usernameEl = document.getElementById("username");
-    const formTitleEl = document.getElementById("formTitle");
-    if(usernameEl) usernameEl.value = nama;
-    if(formTitleEl) formTitleEl.innerText = "Edit User";
+window.editUser = async function(id, nama) {
+    editTargetId = id;
+    try {
+        const response = await fetch('../api/users.php?action=list');
+        const users = await response.json();
+        const user = users.find(u => u.id_user == id);
+        if(user) {
+            document.getElementById("nama").value = user.nama;
+            document.getElementById("sebagai").value = user.sebagai;
+            document.getElementById("username").value = user.username;
+            document.getElementById("foto").value = user.foto;
+            document.getElementById("keterangan").value = user.keterangan;
+            document.getElementById("formTitle").innerText = "Edit User: " + user.nama;
+        }
+    } catch(e) {}
     window.openForm();
-    console.log('editUser called for', nama);
 };
 
-window.hapusUser = function(btn){
-    if(confirm("Yakin hapus user ini?")){
-        btn.closest(".user-card").remove();
+window.hapusUser = async function(id) {
+    if(confirm("Yakin hapus user ini?")) {
+        try {
+            const response = await fetch('../api/users.php?action=delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'id=' + id
+            });
+            if(response.ok) {
+                loadUsers();
+            }
+        } catch(e) {
+            alert('Error hapus user');
+        }
     }
 };
 
-// Auto exec for injected context
-console.log('User.php loaded, functions ready');
+// Auto exec: load users when injected
+loadUsers();
+console.log('User.php dengan DB loaded');
 </script>
 
 </body>

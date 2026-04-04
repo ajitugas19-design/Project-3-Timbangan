@@ -1,8 +1,44 @@
+<?php
+require_once '../config.php';
+
+// Handle login POST
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+
+    if ($username && $password) {
+        $stmt = $pdo->prepare("SELECT id_user, nama, username, password FROM user WHERE username = ? AND keterangan = 'Aktif'");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+
+        if ($user && ($user['password'] === $password || password_verify($password, $user['password']))) {
+            $_SESSION['user_id'] = $user['id_user'];
+            $_SESSION['user_nama'] = $user['nama'];
+            $_SESSION['user_username'] = $user['username'];
+        } else {
+            $error = "Username atau password salah!";
+        }
+    }
+}
+
+// Cek login, jika belum redirect ke index
+if (!isLoggedIn()) {
+    header('Location: ../Index.php?error=' . urlencode($error ?? 'Silakan login'));
+    exit;
+}
+
+// Logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header('Location: ../Index.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Navbar</title>
+<title>Dashboard - Timbangan</title>
 
 <style>
 body {
@@ -11,7 +47,11 @@ body {
     overflow-x: hidden;
 }
 
-/* USER STYLES */
+.content {
+    padding: 20px;
+}
+
+/* USER STYLES - from original */
 .user-header {
     display:flex;
     justify-content:space-between;
@@ -191,11 +231,6 @@ body {
     text-decoration: none;
     color: black;
 }
-
-/* Content */
-.content {
-    padding: 20px;
-}
 </style>
 </head>
 
@@ -204,17 +239,17 @@ body {
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
 
-    <div class="profile">
+<div class="profile">
         <img src="Img/user.png" alt="Profile">
         <p>Login sebagai</p>
-        <h4>Admin</h4>
+        <h4><?php echo htmlspecialchars($_SESSION['user_nama'] ?? 'Admin'); ?></h4>
     </div>
 
     <a href="#" onclick="loadDashboard()">Dashboard</a>
     <a href="#" onclick="loadContent('sidebar/User.php')">User</a>
     <a href="#">Data Buku</a>
     <a href="#">Laporan</a>
-    <a href="index.php">Logout</a>
+    <a href="?logout=1">Logout</a>
 </div>
 
 <!-- MAIN -->
@@ -230,17 +265,12 @@ body {
             </div>
             <b style="margin-left:10px;">Dashboard</b>
         </div>
-
-        <div class="menu">
-            <a href="#">Home</a>
-            <a href="#">Profile</a>
-        </div>
     </div>
 
     <!-- CONTENT -->
     <div class="content" id="content">
-        <h2>Selamat Datang</h2>
-        <p>Ini halaman dashboard setelah login.</p>
+        <h2>Selamat Datang, <?php echo htmlspecialchars($_SESSION['user_nama'] ?? 'User'); ?>!</h2>
+        <p>Dashboard Timbangan sudah terkoneksi database.</p>
     </div>
 
 </div>
