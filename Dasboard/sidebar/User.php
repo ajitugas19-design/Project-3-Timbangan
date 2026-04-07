@@ -78,7 +78,7 @@ input:focus {outline:none;border-color:#4ade80;box-shadow:0 0 0 3px rgba(74,222,
 </head>
 <body>
 <button class="add-user-btn" onclick="openForm('tambah')">➕ Tambah User Baru</button>
-<div id="userList">Loading...</div>
+<div id="userList"><div class="loading"><div class="spinner"></div><p>Loading users...</p></div></div>
 <div class="overlay" id="overlay" onclick="closeForm()"></div>
 <div class="form-slide" id="formSlide">
 <h4 id="formTitle" class="mode-title"></h4>

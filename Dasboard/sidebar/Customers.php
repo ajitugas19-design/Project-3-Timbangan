@@ -184,7 +184,7 @@ input{
 </tr>
 </thead>
 <tbody id="userList">
-<tr><td colspan="5" style="text-align:center;padding:40px;color:#6b7280;"><i>Loading data customers...</i></td></tr>
+<tr><td colspan="5" style="text-align:center;padding:20px;color:#6b7280;">👥 Loading customers...</td></tr>
 </tbody>
 </table>
 </div>
@@ -218,12 +218,12 @@ async function loadCustomers(){
     html += `
     <tr>
       <td>${no++}</td>
-      <td><strong>${c.nama}</strong></td>
-      <td>${c.keterangan || '-'}</td>
+      <td><strong>${c.Customers}</strong></td>
+      <td>${c.Keterangan || '-'}</td>
       <td><span style="color:#10b981;font-weight:bold;">📦 0 Pesanan<br><small>(Belum ada data pesanan)</small></span></td>
       <td>
-        <button class="edit" onclick="editCustomer(${c.id})">✏️ Edit</button>
-        <button class="hapus" onclick="hapusCustomer(${c.id})">🗑️ Hapus</button>
+        <button class="edit" onclick="editCustomer(${c.id_Customers})">✏️ Edit</button>
+        <button class="hapus" onclick="hapusCustomer(${c.id_Customers})">🗑️ Hapus</button>
       </td>
     </tr>`;
   });
@@ -256,8 +256,8 @@ async function editCustomer(id){
   openForm();
 
   document.getElementById("formTitle").innerText="Edit Customer";
-  document.getElementById("nama").value=r.data.nama;
-  document.getElementById("keterangan").value=r.data.keterangan;
+  document.getElementById("nama").value=r.data.Customers;
+  document.getElementById("keterangan").value=r.data.Keterangan;
 }
 
 // DELETE
@@ -300,3 +300,4 @@ loadCustomers();
 
 </body>
 </html>
+

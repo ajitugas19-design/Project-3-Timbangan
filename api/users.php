@@ -3,36 +3,36 @@ require_once '../config.php';
 
 header('Content-Type: application/json');
 
+if (!function_exists('isLoggedIn') || !isLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    exit;
+}
+
 $action = $_GET['action'] ?? '';
 
 try {
     switch($action) {
         case 'list':
-$stmt = $pdo->query("SELECT id_user, nama, sebagai, `user`, foto FROM user ORDER BY nama");
-            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode($users);
+            $stmt = $pdo->query("SELECT id_user, nama, sebagai, `user`, foto, keterangan FROM user ORDER BY nama");
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['status' => 'success', 'data' => $data]);
             break;
 
         case 'add':
             $data = json_decode(file_get_contents('php://input'), true);
             
-            // Server-side validation - ALL required for tambah user baru
             $required = ['nama', 'sebagai', 'username', 'password', 'foto', 'keterangan'];
             foreach ($required as $field) {
                 if (empty(trim($data[$field] ?? ''))) {
-                    http_response_code(400);
-                    echo json_encode(['error' => 'Semua field wajib diisi untuk tambah user baru: ' . $field]);
-                    return;
+                    throw new Exception("Field wajib: $field");
                 }
             }
             
-            // Unique check
             $check = $pdo->prepare('SELECT COUNT(*) FROM user WHERE nama = ? OR `user` = ?');
             $check->execute([$data['nama'], $data['username']]);
             if ($check->fetchColumn() > 0) {
-                http_response_code(409);
-                echo json_encode(['error' => 'Nama atau username sudah ada']);
-                return;
+                throw new Exception('Nama atau username sudah ada');
             }
             
             $stmt = $pdo->prepare("INSERT INTO user (nama, sebagai, `user`, password, foto, keterangan) VALUES (?, ?, ?, ?, ?, ?)");
@@ -44,20 +44,16 @@ $stmt = $pdo->query("SELECT id_user, nama, sebagai, `user`, foto FROM user ORDER
                 trim($data['foto']),
                 trim($data['keterangan'])
             ]);
-            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId()]);
+            echo json_encode(['status' => 'success', 'id' => $pdo->lastInsertId()]);
             break;
 
         case 'edit':
             $data = json_decode(file_get_contents('php://input'), true);
             
-            // Minimal validation for edit
             if (empty($data['nama']) || empty($data['username']) || empty($data['id'])) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Nama, username, dan ID wajib untuk edit']);
-                return;
+                throw new Exception('Nama, username, ID wajib');
             }
             
-            // Optional password change only if provided
             $passwordHash = !empty($data['password']) ? password_hash($data['password'], PASSWORD_DEFAULT) : null;
             
             $stmt = $pdo->prepare("UPDATE user SET nama = ?, sebagai = COALESCE(?, sebagai), `user` = ?, 
@@ -70,25 +66,28 @@ $stmt = $pdo->query("SELECT id_user, nama, sebagai, `user`, foto FROM user ORDER
                 $passwordHash,
                 trim($data['foto'] ?? null),
                 trim($data['keterangan'] ?? null),
-                $data['id']
+                (int)$data['id']
             ]);
-            echo json_encode(['success' => true]);
+            echo json_encode(['status' => 'success']);
             break;
 
         case 'delete':
-            $id = $_POST['id'] ?? 0;
-            $stmt = $pdo->prepare("DELETE FROM user WHERE id_user = ? AND id_user != 1");  // Protect admin ID=1
+            $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
+            if (!$id || $id == 1) {
+                throw new Exception('Admin ID=1 dilindungi');
+            }
+            $stmt = $pdo->prepare("DELETE FROM user WHERE id_user = ?");
             $stmt->execute([$id]);
-            echo json_encode(['success' => true]);
+            echo json_encode(['status' => 'success']);
             break;
 
         default:
             http_response_code(400);
-            echo json_encode(['error' => 'Action tidak valid']);
+            echo json_encode(['status' => 'error', 'message' => 'Action tidak valid']);
     }
-} catch(Exception $e) {
+} catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
 

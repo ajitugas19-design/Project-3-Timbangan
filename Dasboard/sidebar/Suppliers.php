@@ -186,7 +186,7 @@ input{
 </tr>
 </thead>
 <tbody id="supplierList">
-<tr><td colspan="6" style="text-align:center;padding:40px;color:#6b7280;"><i>Loading data suppliers...</i></td></tr>
+<tr><td colspan="6" style="text-align:center;padding:20px;color:#6b7280;">🏭 Loading suppliers...</td></tr>
 </tbody>
 </table>
 </div>

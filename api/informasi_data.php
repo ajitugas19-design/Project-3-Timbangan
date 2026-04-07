@@ -1,7 +1,6 @@
 <?php
 require_once '../config.php';
 
-// Auth check
 if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
@@ -10,84 +9,69 @@ if (!function_exists('isLoggedIn') || !isLoggedIn()) {
 
 header('Content-Type: application/json');
 
-$method = $_SERVER['REQUEST_METHOD'];
 $tgl = $_GET['tgl'] ?? '';
-$id_data = $_GET['id'] ?? null;
+$page = max(1, (int)($_GET['page'] ?? 1));
+$limit = max(1, min(50, (int)($_GET['limit'] ?? 10)));
+$offset = ($page - 1) * $limit;
+$id = $_GET['id'] ?? null;
+$method = $_SERVER['REQUEST_METHOD'];
 
 try {
     switch ($method) {
         case 'GET':
-            // GET all or filter by tanggal_in
             $where = "WHERE 1=1";
             $params = [];
             if ($tgl) {
-                $where .= " AND (ti.tanggal_in = ? OR to.tanggal_out = ?)";
-                $params[] = $tgl;
-                $params[] = $tgl;
+                $where .= " AND (DATE(wi.tanggal_in) = ? OR DATE(wo.tanggal_out) = ?)";
+                $params = [$tgl, $tgl];
             }
-$stmt = $pdo->prepare("
-                SELECT 
-                    d.id_data, d.isi_muatan as muatan, d.bruto, d.tara, d.netto, d.keterangan,
-                    k.sopir, k.jenis_kendaraan as kendaraan, k.nopol,
-                    ti.tanggal_in, ti.jam_in, 
-                    to.tanggal_out, to.jam_out
-                FROM data d
-                LEFT JOIN kendaraan k ON d.kendaraan_id = k.id_kendaraan
-                LEFT JOIN transaksi_in ti ON d.id_data = ti.id_data
-                LEFT JOIN transaksi_out to ON d.id_data = to.id_data
-                $where
-                ORDER BY ti.tanggal_in DESC, to.tanggal_out DESC, d.id_data DESC
-            ");
+
+            $countStmt = $pdo->prepare("SELECT COUNT(*) FROM transaksi t 
+                LEFT JOIN waktu_in wi ON t.id_in = wi.id_in 
+                LEFT JOIN waktu_out wo ON t.id_out = wo.id_out 
+                LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
+                LEFT JOIN material m ON t.id_material = m.id_Material
+                LEFT JOIN customers c ON t.id_customers = c.id_Customers
+                LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+                $where");
+            $countStmt->execute($params);
+            $total = $countStmt->fetchColumn();
+
+            $limit_int = (int)$limit;
+            $offset_int = (int)$offset;
+            $stmt = $pdo->prepare("SELECT 
+                    t.id_transaksi as id_data, t.no_record,
+                    k.Sopir as sopir, k.Nopol as nopol,
+                    s.Nama_Supplier as supplier, m.Material as muatan, c.Customers as customer,
+                    wi.tanggal_in, wi.jam_in, 
+                    wo.tanggal_out, wo.jam_out,
+                    t.bruto, t.tara, t.netto, t.no_record as keterangan
+                FROM transaksi t 
+                LEFT JOIN waktu_in wi ON t.id_in = wi.id_in 
+                LEFT JOIN waktu_out wo ON t.id_out = wo.id_out 
+                LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
+                LEFT JOIN material m ON t.id_material = m.id_Material
+                LEFT JOIN customers c ON t.id_customers = c.id_Customers
+                LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+                $where 
+                ORDER BY wi.tanggal_in DESC, wo.tanggal_out DESC, t.id_transaksi DESC 
+                LIMIT $limit_int OFFSET $offset_int");
             $stmt->execute($params);
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            error_log('Informasi data query: tgl=' . ($tgl ?? 'none') . ', rows: ' . count($data));
-            echo json_encode($data ?: []);
-            break;
-            echo json_encode($data ?: []);
-            break;
 
-        case 'POST':
-            // Create new
-            $input = json_decode(file_get_contents('php://input'), true);
-            $stmt = $pdo->prepare("
-                INSERT INTO data (isi_muatan, bruto, tara, netto, keterangan) 
-                VALUES (?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([
-                $input['muatan'] ?? '',
-                $input['bruto'] ?? 0,
-                $input['tara'] ?? 0,
-                $input['netto'] ?? 0,
-                $input['keterangan'] ?? ''
+            echo json_encode([
+                'data' => $data,
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'pages' => ceil($total / $limit)
             ]);
-            echo json_encode(['id' => $pdo->lastInsertId()]);
-            break;
-
-        case 'PUT':
-            // Edit by id_data
-            if (!$id_data) throw new Exception('ID required');
-            $input = json_decode(file_get_contents('php://input'), true);
-            $stmt = $pdo->prepare("
-                UPDATE data SET 
-                isi_muatan = ?, bruto = ?, tara = ?, netto = ?, keterangan = ? 
-                WHERE id_data = ?
-            ");
-            $stmt->execute([
-                $input['muatan'] ?? '',
-                $input['bruto'] ?? 0,
-                $input['tara'] ?? 0,
-                $input['netto'] ?? 0,
-                $input['keterangan'] ?? '',
-                $id_data
-            ]);
-            echo json_encode(['success' => true]);
             break;
 
         case 'DELETE':
-            // Delete by id_data
-            if (!$id_data) throw new Exception('ID required');
-            $stmt = $pdo->prepare("DELETE FROM data WHERE id_data = ?");
-            $stmt->execute([$id_data]);
+            if (!$id) throw new Exception('ID required');
+            $stmt = $pdo->prepare("DELETE FROM transaksi WHERE id_transaksi = ?");
+            $stmt->execute([$id]);
             echo json_encode(['success' => true]);
             break;
 

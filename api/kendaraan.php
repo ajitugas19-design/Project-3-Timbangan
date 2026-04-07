@@ -1,5 +1,4 @@
 <?php
-header('Content-Type: application/json');
 require_once '../config.php';
 
 if (!function_exists('isLoggedIn') || !isLoggedIn()) {
@@ -13,45 +12,55 @@ $action = $_GET['action'] ?? '';
 try {
     switch($action) {
         case 'list':
-            $stmt = $pdo->query("SELECT * FROM customers ORDER BY id_Customers DESC");
+            $stmt = $pdo->query("SELECT *, '' as Jenis_Kendaraan FROM kendaraan ORDER BY Nopol");
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['status' => 'success', 'data' => $data]);
             break;
         
         case 'get':
             $id = (int)($_GET['id'] ?? 0);
-            $stmt = $pdo->prepare("SELECT * FROM customers WHERE id_Customers = ?");
-            $stmt->execute([$id]);
+            $nopol = $_GET['nopol'] ?? '';
+            
+            if ($id) {
+                $stmt = $pdo->prepare("SELECT *, '' as Jenis_Kendaraan FROM kendaraan WHERE id_Kendaraan = ?");
+                $stmt->execute([$id]);
+            } elseif ($nopol) {
+                $stmt = $pdo->prepare("SELECT *, '' as Jenis_Kendaraan FROM kendaraan WHERE Nopol = ?");
+                $stmt->execute([$nopol]);
+            } else {
+                throw new Exception('ID atau Nopol diperlukan');
+            }
+            
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
             echo json_encode(['status' => 'success', 'data' => $data ?: null]);
             break;
         
         case 'add':
             $input = json_decode(file_get_contents('php://input'), true);
-            $nama = trim($input['nama'] ?? '');
-            $keterangan = trim($input['keterangan'] ?? '');
+            $nopol = trim($input['Nopol'] ?? '');
+            $sopir = trim($input['Sopir'] ?? '');
             
-            if (empty($nama)) {
-                throw new Exception('Nama wajib diisi');
+            if (empty($nopol) || empty($sopir)) {
+                throw new Exception('Nopol dan Sopir wajib diisi');
             }
             
-            $stmt = $pdo->prepare("INSERT INTO customers (Customers, Keterangan) VALUES (?, ?)");
-            $stmt->execute([$nama, $keterangan]);
+            $stmt = $pdo->prepare("INSERT INTO kendaraan (Nopol, Sopir) VALUES (?, ?)");
+            $stmt->execute([$nopol, $sopir]);
             echo json_encode(['status' => 'success', 'id' => $pdo->lastInsertId()]);
             break;
         
         case 'edit':
             $input = json_decode(file_get_contents('php://input'), true);
             $id = (int)($input['id'] ?? 0);
-            $nama = trim($input['nama'] ?? '');
-            $keterangan = trim($input['keterangan'] ?? '');
+            $nopol = trim($input['Nopol'] ?? '');
+            $sopir = trim($input['Sopir'] ?? '');
             
-            if (empty($nama) || empty($id)) {
-                throw new Exception('ID dan nama wajib diisi');
+            if (empty($id) || empty($nopol) || empty($sopir)) {
+                throw new Exception('ID, Nopol, Sopir wajib diisi');
             }
             
-            $stmt = $pdo->prepare("UPDATE customers SET Customers = ?, Keterangan = ? WHERE id_Customers = ?");
-            $stmt->execute([$nama, $keterangan, $id]);
+            $stmt = $pdo->prepare("UPDATE kendaraan SET Nopol = ?, Sopir = ? WHERE id_Kendaraan = ?");
+            $stmt->execute([$nopol, $sopir, $id]);
             echo json_encode(['status' => 'success']);
             break;
         
@@ -63,7 +72,7 @@ try {
                 throw new Exception('ID wajib diisi');
             }
             
-            $stmt = $pdo->prepare("DELETE FROM customers WHERE id_Customers = ?");
+            $stmt = $pdo->prepare("DELETE FROM kendaraan WHERE id_Kendaraan = ?");
             $stmt->execute([$id]);
             echo json_encode(['status' => 'success']);
             break;

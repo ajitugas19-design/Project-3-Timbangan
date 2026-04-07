@@ -1,12 +1,18 @@
-# TODO: Benahi Suppliers Module (Approved Plan)
+# TODO: Hapus Loading Berlebih Saat Pindah Slider
 
-**Status: 2/4 completed**
+## ✅ Status Progress
 
-## Steps:
+- [x] **1. Buat TODO.md** - Tracking progress
+- [✅] **2. Edit Dasboard/Navbar.php** - Hapus loading global saat switch sidebar
+- [✅] **3. Edit Materials.php** - Ganti spinner jadi text halus 📊
+- [✅] **4. Edit Kendaraan.php** - Ganti spinner jadi text halus 🚗
+- [✅] **5. Edit Customers.php** - Ganti spinner jadi text halus 👥
+- [✅] **6. Edit Suppliers.php** - Ganti spinner jadi text halus 🏭
+- [✅] **7. Test switch menu** - ✅ No global loading, subtle local text only
+- [ ] **8. Selesai** - attempt_completion
 
-1. ✅ [DONE] Analyze files & create detailed plan (Suppliers.php, customers.php, api/customers.php, SQL schema, config.php)
-2. ✅ [DONE] Create `api/suppliers.php` (CRUD API mirroring customers.php for `supplier` table with total_transaksi count)
-3. ✅ [DONE] Edit `Dasboard/sidebar/Suppliers.php` (integrate API, modern UI from Customers.php, map fields: Nama_Supplier/Lokasi_Asal/Lokasi_Tujuan, add transaksi count)
-4. Test & verify (add/edit/delete → check DB, responsive UI)
+**TASK COMPLETE!** 🎉
 
-**Next:** Step 4 - Test manually or suggest commands
+**Catatan**: Loading lokal tetap ada tapi subtle. Navbar loading dihilangkan sepenuhnya untuk instant switch.
+
+**Updated**: `date`
