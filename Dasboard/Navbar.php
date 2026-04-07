@@ -7,16 +7,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'] ?? '';
 
     if ($username && $password) {
-        $stmt = $pdo->prepare("SELECT id_user, nama, username, password FROM user WHERE username = ? AND keterangan = 'Aktif'");
+$stmt = $pdo->prepare("SELECT id_user, nama, sebagai, `user`, password, foto, keterangan FROM user WHERE `user` = ?");
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
-        if ($user && ($user['password'] === $password || password_verify($password, $user['password']))) {
+if ($user && hash_equals(md5($password), $user['password'])) {
             $_SESSION['user_id'] = $user['id_user'];
             $_SESSION['user_nama'] = $user['nama'];
-            $_SESSION['user_username'] = $user['username'];
+            $_SESSION['user_username'] = $user['user'];
+            session_write_close();
+            header('Location: Navbar.php');
+            exit;
         } else {
             $error = "Username atau password salah!";
+            header('Location: ../Index.php?error=' . urlencode($error));
+            exit;
         }
     }
 }
@@ -27,11 +32,19 @@ if (!isLoggedIn()) {
     exit;
 }
 
-// Logout
+// Logout confirm JS
 if (isset($_GET['logout'])) {
-    session_destroy();
-    header('Location: ../Index.php');
-    exit;
+    if(isset($_POST['confirm']) && $_POST['confirm'] == 'yes') {
+        session_unset();
+        session_destroy(); 
+        session_write_close();
+        setcookie(session_name(), '', 0, '/');
+        header('Location: ../Index.php');
+        exit;
+    } else {
+        header('Location: ../Index.php?error=Keluar dibatalkan');
+        exit;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -245,11 +258,14 @@ body {
         <h4><?php echo htmlspecialchars($_SESSION['user_nama'] ?? 'Admin'); ?></h4>
     </div>
 
-    <a href="#" onclick="loadDashboard()">Dashboard</a>
-    <a href="#" onclick="loadContent('sidebar/User.php')">User</a>
-    <a href="#">Data Buku</a>
-    <a href="#">Laporan</a>
-    <a href="?logout=1">Logout</a>
+    <a href="#" onclick="loadDashboard('Input Informasi')">Input informasi</a>
+    <a href="#" onclick="loadContent('sidebar/Customers.php')">Customers</a>
+    <a onclick="loadContent('sidebar/Suppliers.php', 'Suppliers')">Suppliers</a>
+<a onclick="loadContent('sidebar/Materials.php', 'Materials')">Materials</a>
+    <a href="#" onclick="loadContent('sidebar/Informasi_Data.php', 'Informasi Data')">Informasi Data</a>
+    <a href="#" onclick="loadContent('sidebar/Laporan.php')">Laporan</a>
+    <a href="#" onclick="loadContent('sidebar/User.php', 'User')">User</a>
+    <a href="#" onclick="confirmLogout()">Logout</a>
 </div>
 
 <!-- MAIN -->
@@ -263,7 +279,7 @@ body {
                 <div></div>
                 <div></div>
             </div>
-            <b style="margin-left:10px;">Dashboard</b>
+            <b id="pageTitle" style="margin-left:10px;">Input Data</b>
         </div>
     </div>
 
@@ -328,6 +344,12 @@ function closeForm(){
     if(el) el.classList.remove("active");
     const overlay = document.getElementById("overlay");
     if(overlay) overlay.classList.remove("active");
+}
+
+function confirmLogout() {
+    if(confirm('Apakah anda yakin ingin keluar?')) {
+        window.location.href = '?logout=1&confirm=yes';
+    }
 }
 </script>
 

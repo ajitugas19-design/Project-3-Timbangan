@@ -1,7 +1,9 @@
 <?php
 // config.php - Koneksi Database Timbangan (XAMPP default)
 $host = 'localhost';
-$dbname = 'timbangan';
+
+$dbname = 'penimbangan';
+
 $username = 'root';  // XAMPP default
 $password = '';      // XAMPP default (kosong)
 

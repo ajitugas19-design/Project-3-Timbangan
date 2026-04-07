@@ -1,15 +1,12 @@
-# TODO: Koneksi Database untuk Project Timbangan
+# TODO: Benahi Suppliers Module (Approved Plan)
 
-## Step 1: [DONE] Buat config.php - file koneksi DB pusat
+**Status: 2/4 completed**
 
-## Step 2: [DONE] Update Dasboard/Navbar.php - handler login + session
+## Steps:
 
-## Step 3: [DONE] Buat api/users.php - API untuk CRUD user
+1. ✅ [DONE] Analyze files & create detailed plan (Suppliers.php, customers.php, api/customers.php, SQL schema, config.php)
+2. ✅ [DONE] Create `api/suppliers.php` (CRUD API mirroring customers.php for `supplier` table with total_transaksi count)
+3. ✅ [DONE] Edit `Dasboard/sidebar/Suppliers.php` (integrate API, modern UI from Customers.php, map fields: Nama_Supplier/Lokasi_Asal/Lokasi_Tujuan, add transaksi count)
+4. Test & verify (add/edit/delete → check DB, responsive UI)
 
-## Step 4: [DONE] Update Dasboard/sidebar/User.php - integrasi DB via AJAX
-
-## Step 5: [DONE] Update Index.php - tampil error login
-
-## Step 6: [DONE] ✅ Koneksi database selesai!
-
-**Catatan**: Import timbangan.sql ke phpMyAdmin (DB: timbangan). Sekarang login support plain '12345' & hashed. Test: aji123/12345 → Dashboard → User CRUD. http://localhost/Project_3/Index.php
+**Next:** Step 4 - Test manually or suggest commands

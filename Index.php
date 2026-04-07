@@ -85,22 +85,26 @@ button:hover {
     <img src="Img/Logo.png" class="logo" alt="Logo">
     <h1>Login</h1>
 
-<form action="Dasboard/Navbar.php" method="post">
+<form id="loginForm" action="Dasboard/Navbar.php" method="post">
     <?php
     session_start();
     if (isset($_GET['error'])) {
         echo '<p style="color:red;">' . htmlspecialchars($_GET['error']) . '</p>';
     }
+    if (isset($_GET['success'])) {
+        echo '<p style="color:green;">Login berhasil! Redirecting...</p>';
+        echo '<script>setTimeout(() => window.location.href = "Dasboard/Navbar.php", 1000);</script>';
+    }
     ?>
 
     <div class="input-group">
         <label>Username</label>
-<input type="text" name="username" placeholder="Masukkan username">
+        <input type="text" name="username" id="username" placeholder="Masukkan username">
     </div>
 
     <div class="input-group">
         <label>Password</label>
-<input type="password" name="password" placeholder="Masukkan password">
+        <input type="password" name="password" id="password" placeholder="Masukkan password">
     </div>
 
     <button type="submit">Masuk</button>
@@ -111,6 +115,24 @@ button:hover {
     </div>
 
 </div>
+
+<script>
+// Tangkap enter pada username, pindah ke password
+document.getElementById('username').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // mencegah submit form
+        document.getElementById('password').focus();
+    }
+});
+
+// Tangkap enter pada password, langsung submit form
+document.getElementById('password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('loginForm').submit();
+    }
+});
+</script>
 
 </body>
 </html>
