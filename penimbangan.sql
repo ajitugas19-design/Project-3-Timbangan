@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 06, 2026 at 09:32 AM
+-- Generation Time: Apr 08, 2026 at 04:12 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -38,7 +38,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id_Customers`, `Customers`, `Keterangan`) VALUES
-(1, 'nafi', 'magang');
+(1, 'nafi', 'magang'),
+(3, 'ai', 'murit');
 
 -- --------------------------------------------------------
 
@@ -52,6 +53,13 @@ CREATE TABLE `kendaraan` (
   `Sopir` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `kendaraan`
+--
+
+INSERT INTO `kendaraan` (`id_Kendaraan`, `Nopol`, `Sopir`) VALUES
+(1, 'AB123CDE', 'ABI');
+
 -- --------------------------------------------------------
 
 --
@@ -63,6 +71,13 @@ CREATE TABLE `material` (
   `Kode` varchar(50) NOT NULL,
   `Material` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `material`
+--
+
+INSERT INTO `material` (`id_Material`, `Kode`, `Material`) VALUES
+(1, 'XYZ', 'OBSIDIAN');
 
 -- --------------------------------------------------------
 
@@ -76,6 +91,13 @@ CREATE TABLE `supplier` (
   `Lokasi_Asal` varchar(50) NOT NULL,
   `Lokasi_Tujuan` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `supplier`
+--
+
+INSERT INTO `supplier` (`id_Supplier`, `Nama_Supplier`, `Lokasi_Asal`, `Lokasi_Tujuan`) VALUES
+(1, 'PT.SEJAHTERA', 'GRESIK', 'TULUNGAGUNG');
 
 -- --------------------------------------------------------
 
@@ -96,6 +118,13 @@ CREATE TABLE `transaksi` (
   `tara` decimal(10,2) DEFAULT NULL,
   `netto` decimal(10,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `transaksi`
+--
+
+INSERT INTO `transaksi` (`id_transaksi`, `no_record`, `id_kendaraan`, `id_supplier`, `id_material`, `id_customers`, `id_in`, `id_out`, `bruto`, `tara`, `netto`) VALUES
+(1, '', 1, 1, 1, 1, 1, 1, 211.00, 221.00, 212.00);
 
 -- --------------------------------------------------------
 
@@ -132,6 +161,13 @@ CREATE TABLE `waktu_in` (
   `tanggal_in` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `waktu_in`
+--
+
+INSERT INTO `waktu_in` (`id_in`, `jam_in`, `tanggal_in`) VALUES
+(1, '24:07:46', '2026-04-15');
+
 -- --------------------------------------------------------
 
 --
@@ -143,6 +179,13 @@ CREATE TABLE `waktu_out` (
   `jam_out` time NOT NULL,
   `tanggal_out` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `waktu_out`
+--
+
+INSERT INTO `waktu_out` (`id_out`, `jam_out`, `tanggal_out`) VALUES
+(1, '11:08:24', '2026-04-08');
 
 --
 -- Indexes for dumped tables
@@ -212,31 +255,31 @@ ALTER TABLE `waktu_out`
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id_Customers` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_Customers` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `kendaraan`
 --
 ALTER TABLE `kendaraan`
-  MODIFY `id_Kendaraan` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_Kendaraan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `material`
 --
 ALTER TABLE `material`
-  MODIFY `id_Material` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_Material` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `supplier`
 --
 ALTER TABLE `supplier`
-  MODIFY `id_Supplier` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_Supplier` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `transaksi`
 --
 ALTER TABLE `transaksi`
-  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `user`
@@ -248,13 +291,13 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `waktu_in`
 --
 ALTER TABLE `waktu_in`
-  MODIFY `id_in` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_in` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `waktu_out`
 --
 ALTER TABLE `waktu_out`
-  MODIFY `id_out` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_out` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables

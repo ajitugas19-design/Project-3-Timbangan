@@ -1,431 +1,226 @@
 <?php 
-session_start(); 
-if (!isset($_SESSION['user_id'])) {
-    echo '<div class="error" style="color:#ef4444;background:#fef2f2;padding:20px;border-radius:12px;text-align:center;margin:20px;font-size:18px;border:2px solid #fecaca;">⚠️ Silakan login terlebih dahulu!</div>';
-    exit;
-}
+session_start();
 require_once '../../config.php';
 
-date_default_timezone_set("Asia/Jakarta");
-
-// AUTO NO RECORD
-$stmt = $pdo->query("SELECT COALESCE(MAX(id_transaksi), 0) as max_id FROM transaksi");
-$max = $stmt->fetch(PDO::FETCH_ASSOC);
-$no_record = "TRX" . str_pad($max['max_id'] + 1, 5, '0', STR_PAD_LEFT);
-
-// GET DROPDOWNS
-$customers = $pdo->query("SELECT id_Customers as id, Customers as nama FROM customers ORDER BY nama");
-$kendaraan = $pdo->query("SELECT id_Kendaraan as id, Nopol, Sopir FROM kendaraan ORDER BY Nopol");
-
-$materials = $pdo->query("SELECT id_Material as id, Material as nama FROM material ORDER BY nama");
-$suppliers = $pdo->query("SELECT id_Supplier as id, Nama_Supplier as nama FROM supplier ORDER BY nama");
-
-// Recent transactions
-$recent = $pdo->query("
-    SELECT t.no_record, k.Sopir, k.Nopol, s.Nama_Supplier as supplier, m.Material, c.Customers as customer, 
-           t.netto, wi.tanggal_in 
-    FROM transaksi t 
-    LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
-    LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
-    LEFT JOIN material m ON t.id_material = m.id_Material  
-    LEFT JOIN customers c ON t.id_customers = c.id_Customers
-    LEFT JOIN waktu_in wi ON t.id_in = wi.id_in
-    ORDER BY t.id_transaksi DESC 
-    LIMIT 10
-")->fetchAll(PDO::FETCH_ASSOC);
-
-// SIMPAN
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan'])) {
-    $id_kendaraan = $_POST['id_kendaraan'] ?? 0;
-    if (empty($id_kendaraan)) {
-        $error = "Nopol belum dipilih!";
-    } else {
-        // Insert waktu_in
-        $stmt = $pdo->prepare("INSERT INTO waktu_in (jam_in, tanggal_in) VALUES (?, ?)");
-        $stmt->execute([$_POST['jam_in'], $_POST['tanggal_in']]);
-        $id_in = $pdo->lastInsertId();
-
-        // Insert waktu_out
-        $stmt = $pdo->prepare("INSERT INTO waktu_out (jam_out, tanggal_out) VALUES (?, ?)");
-        $stmt->execute([$_POST['jam_out'], $_POST['tanggal_out']]);
-        $id_out = $pdo->lastInsertId();
-
-        // Insert transaksi
-        $stmt = $pdo->prepare("INSERT INTO transaksi (no_record, id_kendaraan, id_supplier, id_material, id_customers, id_in, id_out, bruto, tara, netto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $_POST['no_record'],
-            $id_kendaraan,
-            $_POST['supplier'],
-            $_POST['material'],
-            $_POST['customer'],
-            $id_in,
-            $id_out,
-            $_POST['bruto'],
-            $_POST['tara'],
-            $_POST['netto']
-        ]);
-
-        $success = "Data berhasil disimpan!";
-        // Reload recent after save
-        $recent = $pdo->query("
-            SELECT t.no_record, k.Sopir, k.Nopol, s.Nama_Supplier as supplier, m.Material, c.Customers as customer, 
-                   t.netto, wi.tanggal_in 
-            FROM transaksi t 
-            LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
-            LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
-            LEFT JOIN material m ON t.id_material = m.id_Material  
-            LEFT JOIN customers c ON t.id_customers = c.id_Customers
-            LEFT JOIN waktu_in wi ON t.id_in = wi.id_in
-            ORDER BY t.id_transaksi DESC 
-            LIMIT 10
-        ")->fetchAll(PDO::FETCH_ASSOC);
-    }
+if (!isset($_SESSION['user_id'])) {
+    echo '<div style="color:red;text-align:center;margin-top:50px;">Silakan login terlebih dahulu!</div>';
+    exit;
 }
+
+// ================== LOAD DATA ==================
+$kendaraan = $pdo->query("SELECT id_Kendaraan, Nopol, Sopir FROM kendaraan")->fetchAll(PDO::FETCH_ASSOC);
+$customers = $pdo->query("SELECT id_Customers, Customers FROM customers")->fetchAll(PDO::FETCH_ASSOC);
+$suppliers = $pdo->query("SELECT id_Supplier, Nama_Supplier FROM supplier")->fetchAll(PDO::FETCH_ASSOC);
+$materials = $pdo->query("SELECT id_Material as id, Material as nama FROM material")->fetchAll(PDO::FETCH_ASSOC);
+
+
+
+// ================== AUTO NO RECORD ==================
+$max = $pdo->query("SELECT MAX(id_transaksi) as max FROM transaksi")->fetch();
+$no_record = 'TRX' . str_pad(($max['max'] ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+
+// ================== INSERT ==================
+if (isset($_POST['simpan'])) {
+
+    $stmt = $pdo->prepare("INSERT INTO transaksi 
+        (no_record, id_kendaraan, id_supplier, id_material, id_customers, bruto, tara, netto) 
+        VALUES (?,?,?,?,?,?,?,?)");
+
+    $stmt->execute([
+        $_POST['no_record'],
+        $_POST['id_kendaraan'],
+        $_POST['id_supplier'],
+        $_POST['id_material'],
+        $_POST['id_customers'],
+        $_POST['bruto'],
+        $_POST['tara'],
+        $_POST['netto']
+    ]);
+
+    echo "<script>alert('Data berhasil disimpan');location='';</script>";
+}
+
+// ================== DELETE ==================
+if (isset($_GET['hapus'])) {
+    $pdo->prepare("DELETE FROM transaksi WHERE id_transaksi=?")->execute([$_GET['hapus']]);
+    echo "<script>alert('Data dihapus');location='';</script>";
+}
+
+// ================== LOAD TABLE ==================
+$data = $pdo->query("
+SELECT t.*, k.Nopol, k.Sopir, s.Nama_Supplier, m.material AS material, c.Customers
+FROM transaksi t
+LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
+LEFT JOIN material m ON t.id_material = m.id_Material
+LEFT JOIN customers c ON t.id_customers = c.id_Customers
+ORDER BY t.id_transaksi DESC
+
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-<title>Penimbangan - Input Transaksi</title>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Input Transaksi</title>
 
 <style>
-body { 
-    margin:0; 
-    font-family:'Segoe UI',sans-serif; 
-    background:linear-gradient(135deg,#1e3c72,#2a5298); 
-    min-height:100vh; 
-    padding:20px; 
+body{
+    font-family:Segoe UI;
+    background:linear-gradient(135deg,#1e3c72,#2a5298);
+    padding:20px;
 }
-.container { 
-    max-width:1200px; 
-    margin:0 auto; 
-    background:#fff; 
-    border-radius:12px; 
-    padding:25px; 
-    box-shadow:0 10px 25px rgba(0,0,0,0.3); 
+.container{
+    background:white;
+    padding:25px;
+    border-radius:12px;
 }
-.title { 
-    text-align:center; 
-    font-size:28px; 
-    font-weight:bold; 
-    color:#333; 
-    margin-bottom:20px; 
+input,select{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
 }
-.error { 
-    color:#ef4444; 
-    background:#fef2f2; 
-    padding:15px; 
-    border-radius:8px; 
-    margin-bottom:20px; 
-    text-align:center; 
-    border:1px solid #fecaca; 
+button{
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#10b981;
+    color:white;
+    font-weight:bold;
+    width:100%;
 }
-.success { 
-    color:#10b981; 
-    background:#ecfdf5; 
-    padding:15px; 
-    border-radius:8px; 
-    margin-bottom:20px; 
-    text-align:center; 
-    border:1px solid #bbf7d0; 
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
 }
-.nav-buttons { 
-    display:flex; 
-    gap:15px; 
-    justify-content:center; 
-    margin:30px 0; 
-    flex-wrap:wrap; 
+th,td{
+    padding:10px;
+    border-bottom:1px solid #ddd;
 }
-.btn { 
-    padding:12px 24px; 
-    border:none; 
-    border-radius:8px; 
-    text-decoration:none; 
-    font-weight:500; 
-    cursor:pointer; 
-    transition:0.3s; 
-    box-shadow:0 4px 12px rgba(0,0,0,0.15); 
-    display:inline-flex; 
-    align-items:center; 
-    gap:8px; 
-}
-.btn-primary { 
-    background:#3b82f6; 
-    color:white; 
-}
-.btn-primary:hover { 
-    background:#2563eb; 
-    transform:translateY(-2px); 
-}
-.btn-success { 
-    background:#10b981; 
-    color:white; 
-}
-.btn-success:hover { 
-    background:#059669; 
-    transform:translateY(-2px); 
-}
-.form-row { 
-    display:flex; 
-    align-items:center; 
-    margin-bottom:15px; 
-    gap:15px; 
-}
-label { 
-    width:140px; 
-    font-weight:600; 
-    color:#444; 
-    flex-shrink:0; 
-}
-input, select { 
-    flex:1; 
-    padding:10px 14px; 
-    border-radius:8px; 
-    border:1px solid #d1d5db; 
-    font-size:14px; 
-    transition:0.3s; 
-}
-input:focus, select:focus { 
-    outline:none; 
-    border-color:#3b82f6; 
-    box-shadow:0 0 0 3px rgba(59,130,246,0.1); 
-}
-.btn-small { 
-    padding:8px 16px; 
-    border:none; 
-    border-radius:6px; 
-    background:#6b7280; 
-    color:white; 
-    cursor:pointer; 
-    font-size:13px; 
-}
-.btn-small:hover { 
-    background:#4b5563; 
-}
-.btn-save { 
-    background:#10b981; 
-    color:white; 
-    padding:16px 40px; 
-    border:none; 
-    border-radius:12px; 
-    font-size:18px; 
-    font-weight:bold; 
-    cursor:pointer; 
-    width:100%; 
-    margin-top:25px; 
-    box-shadow:0 6px 20px rgba(16,185,129,0.3); 
-}
-.btn-save:hover { 
-    background:#059669; 
-    transform:translateY(-2px); 
-}
-.berat { 
-    display:flex; 
-    gap:20px; 
-    margin:30px 0; 
-}
-.berat-box { 
-    flex:1; 
-    text-align:center; 
-    background:#f8fafc; 
-    padding:25px; 
-    border-radius:12px; 
-    border:2px solid #e2e8f0; 
-}
-.berat-box h3 { 
-    margin:0 0 15px 0; 
-    font-size:20px; 
-    color:#475569; 
-}
-.berat-value { 
-    font-size:32px; 
-    font-weight:bold; 
-    padding:16px; 
-    width:100%; 
-    border-radius:10px; 
-    border:3px solid transparent; 
-}
-.bruto .berat-value { 
-    border-color:#3b82f6; 
-    background:#eff6ff; 
-    color:#1d4ed8; 
-}
-.tara .berat-value { 
-    border-color:#f59e0b; 
-    background:#fef3c7; 
-    color:#b45309; 
-}
-.netto .berat-value { 
-    border-color:#10b981; 
-    background:#ecfdf5; 
-    color:#047857; 
-}
-.data-table { 
-    overflow-x:auto; 
-    margin-top:30px; 
-    border-radius:12px; 
-    box-shadow:0 4px 12px rgba(0,0,0,0.1); 
-}
-table { 
-    width:100%; 
-    border-collapse:collapse; 
-    background:white; 
-}
-th { 
-    background:#374151; 
-    color:white; 
-    padding:14px 12px; 
-    text-align:left; 
-    font-weight:600; 
-    position:sticky; 
-    top:0; 
-}
-td { 
-    padding:14px 12px; 
-    border-bottom:1px solid #f3f4f6; 
-}
-tr:hover { 
-    background:#f9fafb; 
-}
-.netto-col { 
-    color:#10b981; 
-    font-weight:bold; 
-}
-.empty-state { 
-    text-align:center; 
-    padding:40px; 
-    color:#6b7280; 
-    font-size:16px; 
-}
-.footer { 
-    text-align:center; 
-    margin-top:30px; 
-    color:#64748b; 
-}
-@media (max-width:768px) {
-    .form-row { flex-direction:column; align-items:stretch; gap:10px; }
-    label { width:100%; margin-bottom:5px; }
-    .berat { flex-direction:column; gap:15px; }
-    .nav-buttons { flex-direction:column; }
+th{
+    background:#333;
+    color:white;
 }
 </style>
+
 </head>
 <body>
+
 <div class="container">
-    <div class="title">📦 Input Transaksi Penimbangan</div>
 
-    <?php if (isset($error)): ?>
-        <div class="error"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-    <?php if (isset($success)): ?>
-        <div class="success"><?= htmlspecialchars($success) ?></div>
-    <?php endif; ?>
+<h2>Input Transaksi</h2>
 
-    <!-- Nav Buttons -->
-    <div class="nav-buttons">
-        <a href="Informasi_Data.php" class="btn btn-primary" onclick="loadContent('sidebar/Informasi_Data.php'); window.close(); return false;">📊 Lihat Semua Data</a>
-    </div>
+<form method="POST">
 
-    <form method="POST">
-        <input type="hidden" name="id_kendaraan" id="id_kendaraan">
-        <input type="hidden" name="no_record" value="<?= htmlspecialchars($no_record) ?>">
+<label>No Record</label>
+<input type="text" name="no_record" value="<?= $no_record ?>" readonly>
 
-        <div class="form-row">
-            <label>No Record</label>
-            <input type="text" value="<?= htmlspecialchars($no_record) ?>" readonly style="background:#f3f4f6;">
-        </div>
+<label>No Polisi</label>
+<input type="text" id="nopol" list="listNopol">
+<datalist id="listNopol">
+<?php foreach($kendaraan as $k): ?>
+<option value="<?= $k['Nopol'] ?>" data-id="<?= $k['id_Kendaraan'] ?>" data-sopir="<?= $k['Sopir'] ?>">
+<?php endforeach; ?>
+</datalist>
 
-        <div class="form-row">
-            <label>No Polisi</label>
-            <input type="text" id="nopol" name="nopol" list="nopolList" placeholder="Ketik atau pilih Nopol" autofocus required>
-            <datalist id="nopolList">
-                <?php foreach ($kendaraan as $k): ?>
-                    <option value="<?= htmlspecialchars($k['Nopol']) ?>" data-sopir="<?= htmlspecialchars($k['Sopir']) ?>" data-id="<?= $k['id'] ?>">
-                <?php endforeach; ?>
-            </datalist>
-            <button type="button" class="btn-small" onclick="ambilNopol()">🔍 Cari</button>
-        </div>
+<input type="hidden" name="id_kendaraan" id="id_kendaraan">
 
-        <div class="form-row">
-            <label>Sopir</label>
-            <input type="text" id="sopir" name="sopir" list="sopirList" placeholder="Sopir">
-            <datalist id="sopirList">
-                <?php foreach ($kendaraan as $k): ?>
-                    <option value="<?= htmlspecialchars($k['Sopir']) ?>" data-id="<?= $k['id'] ?>">
-                <?php endforeach; ?>
-            </datalist>
-        </div>
+<label>Sopir</label>
+<input type="text" id="sopir" readonly>
 
-        <div class="form-row">
-            <label>Customer</label>
-            <select name="customer" required>
-                <option value="">Pilih Customer</option>
-                <?php foreach ($customers as $c): ?>
-                    <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nama']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+<label>Customer</label>
+<select name="id_customers">
+<?php foreach($customers as $c): ?>
+<option value="<?= $c['id_Customers'] ?>"><?= $c['Customers'] ?></option>
+<?php endforeach; ?>
+</select>
 
-        <div class="form-row">
-            <label>Supplier</label>
-            <select name="supplier" required>
-                <option value="">Pilih Supplier</option>
-                <?php foreach ($suppliers as $s): ?>
-                    <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nama']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+<label>Supplier</label>
+<select name="id_supplier">
+<?php foreach($suppliers as $s): ?>
+<option value="<?= $s['id_Supplier'] ?>"><?= $s['Nama_Supplier'] ?></option>
+<?php endforeach; ?>
+</select>
 
-        <div class="form-row">
-            <label>Material</label>
-            <select name="material" required>
-                <option value="">Pilih Material</option>
-                <?php foreach ($materials as $m): ?>
-                    <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['nama']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+<label>Material</label>
+<select name="id_material">
+<?php foreach($materials as $m): ?>
+<option value="<?= $m['id'] ?>"><?= $m['nama'] ?></option>
+<?php endforeach; ?>
+</select>
 
-        <div class="form-row">
-            <label>Tanggal IN</label>
-            <input type="date" name="tanggal_in" value="<?= date('Y-m-d') ?>" required>
-        </div>
+<label>Bruto</label>
+<input type="number" id="bruto" name="bruto">
 
-        <div class="form-row">
-            <label>Jam IN</label>
-            <input type="time" name="jam_in" value="<?= date('H:i:s') ?>" required>
-        </div>
+<label>Tara</label>
+<input type="number" id="tara" name="tara">
 
-        <div class="form-row">
-            <label>Tanggal OUT</label>
-            <input type="date" name="tanggal_out" value="<?= date('Y-m-d') ?>" required>
-        </div>
+<label>Netto</label>
+<input type="number" id="netto" name="netto" readonly>
 
-        <div class="form-row">
-            <label>Jam OUT</label>
-            <input type="time" name="jam_out" required>
-        </div>
+<button name="simpan">Simpan</button>
 
-        <!-- BERAT -->
-        <div class="berat">
-            <div class="berat-box bruto">
-                <h3>BRUTO</h3>
-                <input type="number" name="bruto" class="berat-value" id="bruto" step="0.01" min="0" required placeholder="0.00">
-            </div>
-            <div class="berat-box tara">
-                <h3>TARA</h3>
-                <input type="number" name="tara" class="berat-value" id="tara" step="0.01" min="0" required placeholder="0.00">
-            </div>
-            <div class="berat-box netto">
-                <h3>NETTO</h3>
-                <input type="number" name="netto" class="berat-value" id="netto" step="0.01" readonly placeholder="Auto">
-            </div>
-        </div>
+</form>
 
-        <button type="submit" name="simpan" class="btn-save">💾 Simpan Transaksi</button>
-    </form>
+<table>
+<tr>
+<th>No</th>
+<th>Record</th>
+<th>Nopol</th>
+<th>Sopir</th>
+<th>Supplier</th>
+<th>Material</th>
+<th>Customer</th>
+<th>Netto</th>
+<th>Aksi</th>
+</tr>
+
+<?php $no=1; foreach($data as $d): ?>
+<tr>
+<td><?= $no++ ?></td>
+<td><?= $d['no_record'] ?></td>
+<td><?= $d['Nopol'] ?></td>
+<td><?= $d['Sopir'] ?></td>
+<td><?= $d['Nama_Supplier'] ?></td>
+<td><?= $d['material'] ?></td>
+<td><?= $d['Customers'] ?></td>
+<td><?= $d['netto'] ?></td>
+<td>
+<a href="?hapus=<?= $d['id_transaksi'] ?>" onclick="return confirm('Hapus?')">Hapus</a>
+</td>
+</tr>
+<?php endforeach; ?>
+
+</table>
+
+</div>
+
+<script>
+// AUTO SOPIR
+document.getElementById('nopol').addEventListener('input', function(){
+    let val = this.value;
+    let options = document.querySelectorAll('#listNopol option');
+    
+    options.forEach(opt=>{
+        if(opt.value === val){
+            document.getElementById('sopir').value = opt.dataset.sopir;
+            document.getElementById('id_kendaraan').value = opt.dataset.id;
+        }
+    });
+});
+
+// AUTO NETTO
+function hitung(){
+    let bruto = parseFloat(document.getElementById('bruto').value) || 0;
+    let tara = parseFloat(document.getElementById('tara').value) || 0;
+    document.getElementById('netto').value = bruto - tara;
+}
+document.getElementById('bruto').addEventListener('input', hitung);
+document.getElementById('tara').addEventListener('input', hitung);
+</script>
 
 </body>
 </html>

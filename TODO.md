@@ -1,18 +1,22 @@
-# TODO: Hapus Loading Berlebih Saat Pindah Slider
+# Perbaiki users.php (Dasboard/sidebar/User.php)
 
-## ✅ Status Progress
+**Status:** Active
 
-- [x] **1. Buat TODO.md** - Tracking progress
-- [✅] **2. Edit Dasboard/Navbar.php** - Hapus loading global saat switch sidebar
-- [✅] **3. Edit Materials.php** - Ganti spinner jadi text halus 📊
-- [✅] **4. Edit Kendaraan.php** - Ganti spinner jadi text halus 🚗
-- [✅] **5. Edit Customers.php** - Ganti spinner jadi text halus 👥
-- [✅] **6. Edit Suppliers.php** - Ganti spinner jadi text halus 🏭
-- [✅] **7. Test switch menu** - ✅ No global loading, subtle local text only
-- [ ] **8. Selesai** - attempt_completion
+**Issues Found:**
 
-**TASK COMPLETE!** 🎉
+- Undefined variable `$isCurrent` line ~204 (PHP template in JS)
+- PHP echo breaks JS template literal syntax
+- Admin ID=1 hardcoded even if missing from DB
+- `$_GET['edit']` data not passed to JS properly
+- api/users.php missing (tab ghost)
 
-**Catatan**: Loading lokal tetap ada tapi subtle. Navbar loading dihilangkan sepenuhnya untuk instant switch.
+**Plan Steps:**
 
-**Updated**: `date`
+1. ✅ Create TODO.md (done)
+2. Fix PHP/JS syntax errors in Dasboard/sidebar/User.php
+3. Create api/users.php JSON API (GET/POST CRUD)
+4. Convert form submits to AJAX calls
+5. Test: Add/edit/delete user, check DB
+6. Update TODO.md, attempt_completion
+
+**Next:** Edit User.php

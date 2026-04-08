@@ -258,7 +258,7 @@ body {
         <h4><?php echo htmlspecialchars($_SESSION['user_nama'] ?? 'Admin'); ?></h4>
     </div>
 
-    <a href="#" onclick="loadContent('sidebar/Input.php')">input</a>
+    <a href="#" onclick="loadContent('sidebar/Input.php')">Input</a>
     <a href="#" onclick="loadContent('sidebar/Customers.php')">Customers</a>
     <a onclick="loadContent('sidebar/Suppliers.php', 'Suppliers')">Suppliers</a>
     <a onclick="loadContent('sidebar/Materials.php', 'Materials')">Materials</a>
@@ -307,63 +307,83 @@ function loadDashboard(){
 }
 
 /* LOAD HALAMAN USER - FIXED SAFE VERSION */
+/* LOAD HALAMAN USER - FIX FINAL ANTI LOADING */
 async function loadContent(url, title = '') {
     const content = document.getElementById('content');
     const pageTitle = document.getElementById('pageTitle');
-    
-    content.innerHTML = '<div style="text-align:center;padding:50px;color:#666;">🔄 Loading...</div>';
+
+    content.innerHTML = '<div style="text-align:center;padding:50px;">🔄 Loading...</div>';
     if (title) pageTitle.textContent = title;
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}: File tidak ditemukan`);
+        const response = await fetch(url, { cache: "no-store" });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
 
         const html = await response.text();
 
-        // Parse HTML safely, extract body content
+        // PARSE HTML
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
+
+        // AMBIL BODY SAJA
         const bodyContent = doc.body ? doc.body.innerHTML : html;
 
-// Inject styles first for proper layout
+        // RESET CONTENT (PENTING!)
+        content.innerHTML = bodyContent;
+
+        // ================= STYLE =================
+        const oldStyles = document.querySelectorAll('style[data-dynamic]');
+        oldStyles.forEach(s => s.remove());
+
         const styles = doc.querySelectorAll('style');
         styles.forEach(style => {
-            const styleEl = document.createElement('style');
-            styleEl.textContent = style.textContent;
-            content.appendChild(styleEl);
+            const newStyle = document.createElement('style');
+            newStyle.textContent = style.textContent;
+            newStyle.setAttribute('data-dynamic', 'true');
+            document.head.appendChild(newStyle);
         });
-        
-        // Then body content
-        content.innerHTML += bodyContent;
-        
-        // Clean up existing styles if any (scoped)
-        const existingStyles = content.querySelectorAll('style[data-scope]');
-        existingStyles.forEach(s => s.remove());
-        
-        // Mark new styles scoped
-        const newStyles = content.querySelectorAll('style');
-        newStyles.forEach(s => s.setAttribute('data-scope', Date.now()));
 
-// Safe script execution
-        const oldScripts = content.querySelectorAll('script');
-        oldScripts.forEach(oldScript => oldScript.remove());
+        // ================= SCRIPT =================
+        const scripts = doc.querySelectorAll('script');
 
-        const newScripts = doc.querySelectorAll('script');
-        newScripts.forEach(script => {
+        for (let script of scripts) {
             const newScript = document.createElement('script');
-            newScript.textContent = script.textContent;
-            newScript.onerror = e => console.error('Script error:', e);
-            content.appendChild(newScript);
-        });
 
-        // Update title if provided
-        if (title) pageTitle.textContent = title;
+            if (script.src) {
+                newScript.src = script.src;
+                newScript.async = false;
+            } else {
+                newScript.textContent = script.textContent;
+            }
 
-        console.log('Content loaded:', url);
+            document.body.appendChild(newScript);
+        }
 
-    } catch (e) {
-        console.error('Load error:', e);
-        content.innerHTML = `<p style="color:red;font-size:18px;padding:50px;">❌ Error loading ${url}: ${e.message}</p>`;
+        console.log("✅ Loaded:", url);
+
+    } catch (err) {
+        console.error("❌ Error:", err);
+
+        content.innerHTML = `
+            <div style="
+                background:#fee2e2;
+                border:2px solid #fecaca;
+                color:#dc2626;
+                padding:30px;
+                border-radius:12px;
+                text-align:center;">
+                
+                ❌ Gagal load halaman<br><br>
+                ${err.message}<br><br>
+                <button onclick="loadContent('${url}','${title}')" 
+                style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;">
+                🔄 Retry
+                </button>
+            </div>
+        `;
     }
 }
 

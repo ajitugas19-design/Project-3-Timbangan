@@ -1,93 +1,94 @@
 <?php
+session_start();
 require_once '../config.php';
 
 header('Content-Type: application/json');
 
 if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-$action = $_GET['action'] ?? '';
-
 try {
-    switch($action) {
-        case 'list':
-            $stmt = $pdo->query("SELECT id_user, nama, sebagai, `user`, foto, keterangan FROM user ORDER BY nama");
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode(['status' => 'success', 'data' => $data]);
-            break;
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // List users
+        $stmt = $pdo->query("SELECT id_user, nama, sebagai, `user`, foto, keterangan FROM user ORDER BY nama");
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'data' => $users]);
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $action = $input['action'] ?? '';
 
-        case 'add':
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            $required = ['nama', 'sebagai', 'username', 'password', 'foto', 'keterangan'];
-            foreach ($required as $field) {
-                if (empty(trim($data[$field] ?? ''))) {
-                    throw new Exception("Field wajib: $field");
+        switch ($action) {
+            case 'add':
+                $nama = trim($input['nama'] ?? '');
+                $sebagai = trim($input['sebagai'] ?? '');
+                $username = trim($input['username'] ?? '');
+                $password = $input['password'] ?? '';
+                $foto = trim($input['foto'] ?? '');
+                $keterangan = trim($input['keterangan'] ?? '');
+
+                if (empty($nama) || empty($sebagai) || empty($username) || empty($password) || empty($foto) || empty($keterangan)) {
+                    throw new Exception('Semua field wajib diisi');
                 }
-            }
-            
-            $check = $pdo->prepare('SELECT COUNT(*) FROM user WHERE nama = ? OR `user` = ?');
-            $check->execute([$data['nama'], $data['username']]);
-            if ($check->fetchColumn() > 0) {
-                throw new Exception('Nama atau username sudah ada');
-            }
-            
-            $stmt = $pdo->prepare("INSERT INTO user (nama, sebagai, `user`, password, foto, keterangan) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                trim($data['nama']),
-                trim($data['sebagai']),
-                trim($data['username']),
-                password_hash($data['password'], PASSWORD_DEFAULT),
-                trim($data['foto']),
-                trim($data['keterangan'])
-            ]);
-            echo json_encode(['status' => 'success', 'id' => $pdo->lastInsertId()]);
-            break;
+                if (strlen($password) < 6) {
+                    throw new Exception('Password minimal 6 karakter');
+                }
+                $check = $pdo->prepare('SELECT COUNT(*) FROM user WHERE nama = ? OR `user` = ?');
+                $check->execute([$nama, $username]);
+                if ($check->fetchColumn() > 0) {
+                    throw new Exception('Nama atau username sudah ada');
+                }
+                $stmt = $pdo->prepare("INSERT INTO user (nama, sebagai, `user`, password, foto, keterangan) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nama, $sebagai, $username, password_hash($password, PASSWORD_DEFAULT), $foto, $keterangan]);
+                echo json_encode(['success' => true, 'message' => '✅ User baru berhasil ditambahkan!']);
+                break;
 
-        case 'edit':
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (empty($data['nama']) || empty($data['username']) || empty($data['id'])) {
-                throw new Exception('Nama, username, ID wajib');
-            }
-            
-            $passwordHash = !empty($data['password']) ? password_hash($data['password'], PASSWORD_DEFAULT) : null;
-            
-            $stmt = $pdo->prepare("UPDATE user SET nama = ?, sebagai = COALESCE(?, sebagai), `user` = ?, 
-                password = COALESCE(?, password), foto = COALESCE(?, foto), keterangan = COALESCE(?, keterangan) 
-                WHERE id_user = ?");
-            $stmt->execute([
-                trim($data['nama']),
-                trim($data['sebagai'] ?? null),
-                trim($data['username']),
-                $passwordHash,
-                trim($data['foto'] ?? null),
-                trim($data['keterangan'] ?? null),
-                (int)$data['id']
-            ]);
-            echo json_encode(['status' => 'success']);
-            break;
+            case 'edit':
+                $id = (int)($input['id'] ?? 0);
+                $nama = trim($input['nama'] ?? '');
+                $sebagai = trim($input['sebagai'] ?? '');
+                $username = trim($input['username'] ?? '');
+                $password = $input['password'] ?? '';
+                $foto = trim($input['foto'] ?? '');
+                $keterangan = trim($input['keterangan'] ?? '');
 
-        case 'delete':
-            $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
-            if (!$id || $id == 1) {
-                throw new Exception('Admin ID=1 dilindungi');
-            }
-            $stmt = $pdo->prepare("DELETE FROM user WHERE id_user = ?");
-            $stmt->execute([$id]);
-            echo json_encode(['status' => 'success']);
-            break;
+                if (!$id || empty($nama) || empty($username)) {
+                    throw new Exception('ID, nama, username wajib');
+                }
+                $query = "UPDATE user SET nama = ?, sebagai = COALESCE(?, sebagai), `user` = ?, foto = COALESCE(?, foto), keterangan = COALESCE(?, keterangan) WHERE id_user = ?";
+                $params = [$nama, $sebagai ?: null, $username, $foto ?: null, $keterangan ?: null, $id];
+                if (!empty($password)) {
+                    $query = "UPDATE user SET nama = ?, sebagai = COALESCE(?, sebagai), `user` = ?, password = ?, foto = COALESCE(?, foto), keterangan = COALESCE(?, keterangan) WHERE id_user = ?";
+                    array_splice($params, 3, 0, password_hash($password, PASSWORD_DEFAULT));
+                    array_unshift(array_slice($params, 6), $id); // Fix param count
+                }
+                $stmt = $pdo->prepare($query);
+                $stmt->execute($params);
+                echo json_encode(['success' => true, 'message' => '✅ User berhasil diupdate!']);
+                break;
 
-        default:
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Action tidak valid']);
+            case 'delete':
+                $id = (int)($input['id'] ?? 0);
+                if (!$id || $id == 1) {
+                    throw new Exception('Admin ID=1 dilindungi');
+                }
+                $stmt = $pdo->prepare("DELETE FROM user WHERE id_user = ?");
+                $stmt->execute([$id]);
+                echo json_encode(['success' => true, 'message' => '✅ User berhasil dihapus!']);
+                break;
+
+            default:
+                throw new Exception('Action tidak valid');
+        }
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     }
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => '❌ Error: ' . $e->getMessage()]);
 }
 ?>
 
