@@ -145,59 +145,42 @@ body {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* lebih kecil */
+  gap: 0.8rem;
+  margin-bottom: 1rem;
 }
 
 .stat-box {
-  background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(59,130,246,0.1) 100%);
-  padding: 1.5rem;
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.08));
+  padding: 0.8rem; /* dari 1.5rem → lebih kecil */
+  border-radius: 10px;
   text-align: center;
-  border: 1px solid rgba(16,185,129,0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #10b981, #3b82f6);
+  border: 1px solid rgba(16,185,129,0.15);
+  transition: 0.2s;
 }
 
 .stat-box:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(16,185,129,0.2);
+  transform: translateY(-2px); /* lebih halus */
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
 
 .stat-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  display: block;
+  font-size: 1.4rem; /* dari 2.5rem → kecil */
+  margin-bottom: 3px;
 }
 
 .stat-value {
-  font-size: clamp(1.5rem, 5vw, 2.5rem);
-  font-weight: 800;
-  background: linear-gradient(135deg, #10b981, #059669);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.25rem;
+  font-size: 1.2rem; /* dari besar → kecil */
+  font-weight: 700;
+  color: #059669;
+  margin-bottom: 2px;
 }
 
 .stat-label {
+  font-size: 0.8rem; /* lebih kecil */
   color: #64748b;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
+  font-weight: 500;
+  letter-spacing: 0.03em;
 }
 
 .controls {
@@ -227,19 +210,6 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  white-space: nowrap;
-}
 
 .btn:hover {
   transform: translateY(-2px);
@@ -392,6 +362,27 @@ td {
   font-size: 1.1rem;
   min-width: 50px;
 }
+
+.btn-cari {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-cari:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.btn-cari:active {
+  transform: scale(0.97);
+}
 </style>
 </head>
 
@@ -428,7 +419,7 @@ td {
         <option value="25" <?= $limit==25?'selected':'' ?>>25 Baris</option>
         <option value="50" <?= $limit==50?'selected':'' ?>>50 Baris</option>
     </select>
-    <button class="btn" type="submit">🔍 Input Data</button>
+     <button class="btn-cari">Cari</button>
 </form>
 
 <!-- TABLE -->

@@ -15,9 +15,9 @@ if ($user && hash_equals(md5($password), $user['password'])) {
             $_SESSION['user_id'] = $user['id_user'];
             $_SESSION['user_nama'] = $user['nama'];
             $_SESSION['user_username'] = $user['user'];
-            session_write_close();
             header('Location: Navbar.php');
             exit;
+
         } else {
             $error = "Username atau password salah!";
             header('Location: ../Index.php?error=' . urlencode($error));
