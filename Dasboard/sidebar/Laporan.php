@@ -1,223 +1,292 @@
-<?php
-session_start();
+<?php 
 require_once '../../config.php';
 
-// ✅ FIX LOGIN
-if (!isset($_SESSION['user_id'])) {
+// ================= CEK LOGIN =================
+if (!isLoggedIn()) {
     header('Location: ../../Index.php');
     exit;
 }
 
-// ================= FILTER =================
-$dari = $_GET['dari'] ?? date('Y-m-d', strtotime('-7 days'));
-$sampai = $_GET['sampai'] ?? date('Y-m-d');
+date_default_timezone_set("Asia/Jakarta");
 
-// ================= QUERY FIX =================
-$where = "WHERE 1=1";
-$params = [];
+// ================= PARAM =================
+$dari   = $_GET['dari'] ?? '';
+$sampai = $_GET['sampai'] ?? '';
+$search = $_GET['search'] ?? '';
+$page   = max(1, (int)($_GET['page'] ?? 1));
+$limit  = max(1, min(50, (int)($_GET['limit'] ?? 10)));
+$offset = ($page - 1) * $limit;
 
-if ($dari) {
-    $where .= " AND wi.tanggal_in >= ?";
-    $params[] = $dari;
-}
-if ($sampai) {
-    $where .= " AND wi.tanggal_in <= ?";
-    $params[] = $sampai;
-}
-
-// ================= DATA =================
-$stmt = $pdo->prepare("
+// ================= QUERY UTAMA =================
+$sql = "
 SELECT 
-    t.no_record,
-    k.Sopir,
-    k.Nopol,
-    s.Nama_Supplier,
-    m.material as material,
-    c.Customers,
-    wi.tanggal_in,
-    wi.jam_in,
-    wo.tanggal_out,
-    wo.jam_out,
-    t.bruto,
-    t.tara,
-    t.netto
+t.id_transaksi,
+t.no_record,
+IFNULL(k.Sopir,'-') as Sopir,
+IFNULL(k.Nopol,'-') as Nopol,
+IFNULL(wi.tanggal_in,'-') as tanggal_in,
+IFNULL(wo.tanggal_out,'-') as tanggal_out,
+IFNULL(t.bruto,0) as bruto,
+IFNULL(t.tara,0) as tara,
+IFNULL(t.netto,0) as netto
 FROM transaksi t
-LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
-LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
-LEFT JOIN material m ON t.id_material = m.id_material
-LEFT JOIN customers c ON t.id_customers = c.id_Customers
 LEFT JOIN waktu_in wi ON t.id_in = wi.id_in
 LEFT JOIN waktu_out wo ON t.id_out = wo.id_out
-$where
-ORDER BY t.id_transaksi DESC
-");
+LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+WHERE 1=1
+";
 
-$stmt->execute($params);
+$params = [];
+
+// ================= FILTER AMAN =================
+if (!empty($dari)) {
+    $sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) >= :dari)";
+    $params[':dari'] = $dari;
+}
+
+if (!empty($sampai)) {
+    $sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) <= :sampai)";
+    $params[':sampai'] = $sampai;
+}
+
+if (!empty($search)) {
+    $sql .= " AND (
+        t.no_record LIKE :search OR
+        k.Sopir LIKE :search OR
+        k.Nopol LIKE :search
+    )";
+    $params[':search'] = "%$search%";
+}
+
+// ================= PAGINATION =================
+$sql .= " ORDER BY t.id_transaksi DESC LIMIT :limit OFFSET :offset";
+
+$stmt = $pdo->prepare($sql);
+
+// bind filter
+foreach ($params as $key => $val) {
+    $stmt->bindValue($key, $val);
+}
+
+// bind limit offset
+$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+
+$stmt->execute();
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ================= SUMMARY =================
-$summary = [
-    'total' => count($data),
-    'bruto' => array_sum(array_column($data, 'bruto')),
-    'tara' => array_sum(array_column($data, 'tara')),
-    'netto' => array_sum(array_column($data, 'netto')),
-];
+// ================= TOTAL DATA =================
+$total_sql = "
+SELECT COUNT(*)
+FROM transaksi t
+LEFT JOIN waktu_in wi ON t.id_in = wi.id_in
+LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+WHERE 1=1
+";
+
+if (!empty($dari)) {
+    $total_sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) >= :dari)";
+}
+if (!empty($sampai)) {
+    $total_sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) <= :sampai)";
+}
+if (!empty($search)) {
+    $total_sql .= " AND (
+        t.no_record LIKE :search OR
+        k.Sopir LIKE :search OR
+        k.Nopol LIKE :search
+    )";
+}
+
+$total_stmt = $pdo->prepare($total_sql);
+
+foreach ($params as $key => $val) {
+    $total_stmt->bindValue($key, $val);
+}
+
+$total_stmt->execute();
+$total = $total_stmt->fetchColumn();
+
+$totalPages = ceil($total / $limit);
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-<title>Laporan Penimbangan</title>
+<title>Laporan</title>
 
 <style>
-body{
-font-family:Segoe UI;
-background:#0f172a;
-color:white;
-padding:20px;
-}
-.container{
-max-width:1300px;margin:auto;
-background:#1e293b;
-border-radius:12px;
-overflow:hidden;
-box-shadow:0 10px 30px rgba(0,0,0,0.4);
+body {
+  font-family: 'Segoe UI';
+  background: #eef2f7;
+  margin: 0;
 }
 
-.header{
-padding:20px;
-background:linear-gradient(135deg,#2563eb,#06b6d4);
-text-align:center;
+/* CONTAINER */
+.container {
+  max-width: 1200px;
+  margin: 30px auto;
 }
 
-.filter{
-padding:15px;
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-background:#020617;
+/* CARD */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
-input{
-padding:10px;
-border-radius:8px;
-border:none;
+/* HEADER */
+h2 {
+  margin-bottom: 20px;
 }
 
-button{
-padding:10px 20px;
-border:none;
-border-radius:8px;
-background:#22c55e;
-color:white;
-cursor:pointer;
+/* FILTER */
+.filter {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.summary{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:10px;
-padding:15px;
+input, select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
 }
 
-.card{
-background:#065f46;
-padding:15px;
-border-radius:10px;
-text-align:center;
+/* BUTTON */
+.btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-table{
-width:100%;
-border-collapse:collapse;
+.btn:hover {
+  background: #2563eb;
 }
 
-th{
-background:#020617;
-padding:12px;
-color:#38bdf8;
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-td{
-padding:10px;
-border-bottom:1px solid #334155;
-text-align:center;
+th {
+  background: #1e293b;
+  color: white;
+  padding: 12px;
 }
 
-tr:hover td{
-background:#334155;
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
 }
 
-@media(max-width:768px){
-.summary{grid-template-columns:repeat(2,1fr);}
+/* PAGINATION */
+.pagination {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.pagination a {
+  padding: 8px 12px;
+  margin: 3px;
+  background: #e5e7eb;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.active {
+  background: #22c55e;
+  color: white;
 }
 </style>
-
 </head>
+
+
 <body>
 
 <div class="container">
-
-<div class="header">
-<h2>Laporan Penimbangan</h2>
+<div class="card">
+<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">
+  <a class="btn" href="sidebar/export/export_pdf.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">🖨️ PDF</a>
+  <a class="btn" href="sidebar/export/export_excel.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">📊 Excel</a>
+  <a class="btn" href="sidebar/export/export_word.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">📝 Word</a>
 </div>
+
+<h2>📊 Laporan Transaksi</h2>
 
 <div class="filter">
 <input type="date" id="dari" value="<?= $dari ?>">
 <input type="date" id="sampai" value="<?= $sampai ?>">
-<button onclick="filter()">Tampilkan</button>
-</div>
+<input type="text" id="search" placeholder="Cari..." value="<?= $search ?>">
 
-<div class="summary">
-<div class="card">Total<br><b><?= $summary['total'] ?></b></div>
-<div class="card">Bruto<br><b><?= number_format($summary['bruto'],0) ?></b></div>
-<div class="card">Tara<br><b><?= number_format($summary['tara'],0) ?></b></div>
-<div class="card">Netto<br><b><?= number_format($summary['netto'],0) ?></b></div>
+<select id="limit">
+<option value="10" <?= $limit==10?'selected':'' ?>>10</option>
+<option value="25" <?= $limit==25?'selected':'' ?>>25</option>
+<option value="50" <?= $limit==50?'selected':'' ?>>50</option>
+</select>
+
+<button class="btn" onclick="filterData()">Filter</button>
 </div>
 
 <table>
 <tr>
 <th>No</th>
-<th>Record</th>
+<th>No Record</th>
 <th>Sopir</th>
 <th>Nopol</th>
-<th>Supplier</th>
-<th>Material</th>
-<th>Customer</th>
-<th>Tanggal</th>
+<th>Masuk</th>
+<th>Keluar</th>
+<th>Bruto</th>
+<th>Tara</th>
 <th>Netto</th>
 </tr>
 
+<?php if(empty($data)): ?>
+<tr>
+<td colspan="9" style="text-align:center;">Data tidak ditemukan</td>
+</tr>
+<?php else: ?>
 <?php $no=1; foreach($data as $d): ?>
 <tr>
 <td><?= $no++ ?></td>
 <td><?= $d['no_record'] ?></td>
 <td><?= $d['Sopir'] ?></td>
 <td><?= $d['Nopol'] ?></td>
-<td><?= $d['Nama_Supplier'] ?></td>
-<td><?= $d['material'] ?></td>
-<td><?= $d['Customers'] ?></td>
 <td><?= $d['tanggal_in'] ?></td>
-<td style="color:#22c55e;font-weight:bold">
-<?= number_format($d['netto'],0) ?>
-</td>
+<td><?= $d['tanggal_out'] ?></td>
+<td><?= number_format($d['bruto']) ?></td>
+<td><?= number_format($d['tara']) ?></td>
+<td><?= number_format($d['netto']) ?></td>
 </tr>
 <?php endforeach; ?>
-
-<?php if(empty($data)): ?>
-<tr><td colspan="9">Tidak ada data</td></tr>
 <?php endif; ?>
-
 </table>
 
+<div class="pagination">
+<?php for($i=1;$i<=$totalPages;$i++): ?>
+<a href="?page=<?= $i ?>&dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>&limit=<?= $limit ?>" class="<?= $i==$page?'active':'' ?>">
+<?= $i ?>
+</a>
+<?php endfor; ?>
+</div>
+
+</div>
 </div>
 
 <script>
-function filter(){
-let dari=document.getElementById('dari').value;
-let sampai=document.getElementById('sampai').value;
+function filterData(){
+  const dari = document.getElementById('dari').value;
+  const sampai = document.getElementById('sampai').value;
+  const search = document.getElementById('search').value;
+  const limit = document.getElementById('limit').value;
 
-window.location=`?dari=${dari}&sampai=${sampai}`;
+  window.location = `?dari=${dari}&sampai=${sampai}&search=${search}&limit=${limit}`;
 }
 </script>
 

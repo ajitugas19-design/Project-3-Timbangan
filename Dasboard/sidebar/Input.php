@@ -7,31 +7,32 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// ================== LOAD DATA ==================
+// LOAD DATA
 $kendaraan = $pdo->query("SELECT id_Kendaraan, Nopol, Sopir FROM kendaraan")->fetchAll(PDO::FETCH_ASSOC);
 $customers = $pdo->query("SELECT id_Customers, Customers FROM customers")->fetchAll(PDO::FETCH_ASSOC);
 $suppliers = $pdo->query("SELECT id_Supplier, Nama_Supplier FROM supplier")->fetchAll(PDO::FETCH_ASSOC);
 $materials = $pdo->query("SELECT id_Material as id, Material as nama FROM material")->fetchAll(PDO::FETCH_ASSOC);
 
-
-
-// ================== AUTO NO RECORD ==================
+// AUTO NO RECORD
 $max = $pdo->query("SELECT MAX(id_transaksi) as max FROM transaksi")->fetch();
-$no_record = 'TRX' . str_pad(($max['max'] ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+$no_record = 'TRAN' . str_pad(($max['max'] ?? 0) + 1, 4, '0', STR_PAD_LEFT);
 
-// ================== INSERT ==================
+// SIMPAN
 if (isset($_POST['simpan'])) {
 
+    $id_customer = isset($_POST['cek_customer']) ? $_POST['id_customers'] : null;
+    $id_supplier = isset($_POST['cek_supplier']) ? $_POST['id_supplier'] : null;
+
     $stmt = $pdo->prepare("INSERT INTO transaksi 
-        (no_record, id_kendaraan, id_supplier, id_material, id_customers, bruto, tara, netto) 
-        VALUES (?,?,?,?,?,?,?,?)");
+    (no_record,id_kendaraan,id_supplier,id_material,id_customers,bruto,tara,netto) 
+    VALUES (?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
         $_POST['no_record'],
         $_POST['id_kendaraan'],
-        $_POST['id_supplier'],
+        $id_supplier,
         $_POST['id_material'],
-        $_POST['id_customers'],
+        $id_customer,
         $_POST['bruto'],
         $_POST['tara'],
         $_POST['netto']
@@ -39,87 +40,36 @@ if (isset($_POST['simpan'])) {
 
     echo "<script>alert('Data berhasil disimpan');location='';</script>";
 }
-
-// ================== DELETE ==================
-if (isset($_GET['hapus'])) {
-    $pdo->prepare("DELETE FROM transaksi WHERE id_transaksi=?")->execute([$_GET['hapus']]);
-    echo "<script>alert('Data dihapus');location='';</script>";
-}
-
-// ================== LOAD TABLE ==================
-$data = $pdo->query("
-SELECT t.*, k.Nopol, k.Sopir, s.Nama_Supplier, m.material AS material, c.Customers
-FROM transaksi t
-LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
-LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
-LEFT JOIN material m ON t.id_material = m.id_Material
-LEFT JOIN customers c ON t.id_customers = c.id_Customers
-ORDER BY t.id_transaksi DESC
-
-")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-<title>Input Transaksi</title>
+<title>Input Timbangan</title>
 
-<style>
-body{
-    font-family:Segoe UI;
-    background:linear-gradient(135deg,#1e3c72,#2a5298);
-    padding:20px;
-}
-.container{
-    background:white;
-    padding:25px;
-    border-radius:12px;
-}
-input,select{
-    width:100%;
-    padding:10px;
-    margin-bottom:10px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-button{
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    background:#10b981;
-    color:white;
-    font-weight:bold;
-    width:100%;
-}
-table{
-    width:100%;
-    margin-top:20px;
-    border-collapse:collapse;
-}
-th,td{
-    padding:10px;
-    border-bottom:1px solid #ddd;
-}
-th{
-    background:#333;
-    color:white;
-}
-</style>
+<style>\n.content-container {\n    background:#e5e5e5;\n    font-family: Arial;\n    padding: 1.5rem;\n    border-radius: var(--radius);\n}\n\n.content-grid {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: clamp(1rem, 3vw, 1.5rem);\n}\n\n.content-label {\n    font-size: 0.9rem;\n    font-weight: 500;\n}\n\n.content-input, .content-select {\n    width: 100%;\n    background: #f3f4f6;\n    border: 1px solid var(--border);\n    padding: clamp(0.75rem, 2vw, 1rem);\n    margin-bottom: 0.75rem;\n    border-radius: 6px;\n}\n\n.content-row {\n    display: flex;\n    gap: 0.75rem;\n}\n\n.content-btn {\n    border: none;\n    padding: 0.75rem 1rem;\n    cursor: pointer;\n    border-radius: 6px;\n}\n\n.content-btn-primary { background:var(--primary); color:white; }\n.content-btn-success { background:var(--primary-dark); color:white; }\n.content-btn-danger { background:#ef4444; color:white; }\n\n.content-center { text-align:center; margin-top:1.5rem; }\n\n.content-box {\n    display:flex;\n    gap:0.75rem;\n}\n\n.content-box > div {\n    flex:1;\n}\n\n.content-small-text {\n    font-size:0.85rem;\n    text-align:center;\n    margin-bottom:0.75rem;\n    color: #6b7280;\n}\n\n.content-check-group {\n    display:flex;\n    align-items:center;\n    gap:0.5rem;\n    margin-bottom:0.5rem;\n}\n\n.content-check-group input {\n    width:auto;\n}\n\n@media (max-width: 768px) {\n  .content-grid, .content-box {\n    grid-template-columns: 1fr;\n    flex-direction: column;\n  }\n  .content-btn {\n    width: 100%;\n  }\n}\n</style>
 
 </head>
 <body>
 
 <div class="container">
 
-<h2>Input Transaksi</h2>
-
 <form method="POST">
 
-<label>No Record</label>
+<div class="grid">
+
+<!-- KIRI -->
+<div>
+
+<label>No. Record</label>
 <input type="text" name="no_record" value="<?= $no_record ?>" readonly>
 
 <label>No Polisi</label>
+<div class="row">
 <input type="text" id="nopol" list="listNopol">
+<button type="button" class="btn blue">Enter</button>
+</div>
+
 <datalist id="listNopol">
 <?php foreach($kendaraan as $k): ?>
 <option value="<?= $k['Nopol'] ?>" data-id="<?= $k['id_Kendaraan'] ?>" data-sopir="<?= $k['Sopir'] ?>">
@@ -131,15 +81,23 @@ th{
 <label>Sopir</label>
 <input type="text" id="sopir" readonly>
 
-<label>Customer</label>
-<select name="id_customers">
+<!-- CUSTOMER -->
+<div class="check-group">
+<input type="checkbox" id="cek_customer" name="cek_customer">
+<label style="background:#ef4444;color:white;padding:3px;">Customer</label>
+</div>
+<select name="id_customers" id="customer" disabled>
 <?php foreach($customers as $c): ?>
 <option value="<?= $c['id_Customers'] ?>"><?= $c['Customers'] ?></option>
 <?php endforeach; ?>
 </select>
 
+<!-- SUPPLIER -->
+<div class="check-group">
+<input type="checkbox" id="cek_supplier" name="cek_supplier">
 <label>Supplier</label>
-<select name="id_supplier">
+</div>
+<select name="id_supplier" id="supplier" disabled>
 <?php foreach($suppliers as $s): ?>
 <option value="<?= $s['id_Supplier'] ?>"><?= $s['Nama_Supplier'] ?></option>
 <?php endforeach; ?>
@@ -152,49 +110,62 @@ th{
 <?php endforeach; ?>
 </select>
 
+<label>Jam Masuk</label>
+<input type="time" name="jam_masuk">
+
+<label>Tanggal Masuk</label>
+<input type="date" name="tgl_masuk">
+
+</div>
+
+<!-- KANAN -->
+<div>
+
+<div class="small-text">
+Timbang Truk yang belum mengisi full, berdasarkan No polisi<br>
+Seperti Tombol Edit
+</div>
+
+<select>
+<option>-- pilih --</option>
+</select>
+
+<div class="box">
+<div>
 <label>Bruto</label>
 <input type="number" id="bruto" name="bruto">
+</div>
 
+<div>
 <label>Tara</label>
 <input type="number" id="tara" name="tara">
+</div>
 
+<div>
 <label>Netto</label>
 <input type="number" id="netto" name="netto" readonly>
+</div>
+</div>
 
-<button name="simpan">Simpan</button>
+<div class="center">
+<button type="button" class="btn green" onclick="hitung()">TIMBANG</button>
+</div>
+
+<label>Jam Keluar</label>
+<input type="time" name="jam_keluar">
+
+<label>Tanggal Keluar</label>
+<input type="date" name="tgl_keluar">
+
+</div>
+
+</div>
+
+<div class="center">
+<button name="simpan" class="btn green">SIMPAN</button>
+</div>
 
 </form>
-
-<table>
-<tr>
-<th>No</th>
-<th>Record</th>
-<th>Nopol</th>
-<th>Sopir</th>
-<th>Supplier</th>
-<th>Material</th>
-<th>Customer</th>
-<th>Netto</th>
-<th>Aksi</th>
-</tr>
-
-<?php $no=1; foreach($data as $d): ?>
-<tr>
-<td><?= $no++ ?></td>
-<td><?= $d['no_record'] ?></td>
-<td><?= $d['Nopol'] ?></td>
-<td><?= $d['Sopir'] ?></td>
-<td><?= $d['Nama_Supplier'] ?></td>
-<td><?= $d['material'] ?></td>
-<td><?= $d['Customers'] ?></td>
-<td><?= $d['netto'] ?></td>
-<td>
-<a href="?hapus=<?= $d['id_transaksi'] ?>" onclick="return confirm('Hapus?')">Hapus</a>
-</td>
-</tr>
-<?php endforeach; ?>
-
-</table>
 
 </div>
 
@@ -212,14 +183,21 @@ document.getElementById('nopol').addEventListener('input', function(){
     });
 });
 
-// AUTO NETTO
+// HITUNG NETTO
 function hitung(){
     let bruto = parseFloat(document.getElementById('bruto').value) || 0;
     let tara = parseFloat(document.getElementById('tara').value) || 0;
     document.getElementById('netto').value = bruto - tara;
 }
-document.getElementById('bruto').addEventListener('input', hitung);
-document.getElementById('tara').addEventListener('input', hitung);
+
+// ENABLE DISABLE CHECKBOX
+document.getElementById('cek_customer').addEventListener('change', function(){
+    document.getElementById('customer').disabled = !this.checked;
+});
+
+document.getElementById('cek_supplier').addEventListener('change', function(){
+    document.getElementById('supplier').disabled = !this.checked;
+});
 </script>
 
 </body>
