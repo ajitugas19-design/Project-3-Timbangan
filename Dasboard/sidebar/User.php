@@ -105,7 +105,7 @@ $users = $pdo->query("SELECT * FROM user ORDER BY nama")->fetchAll(PDO::FETCH_AS
 <html>
 <head>
 <style>
-body{font-family:Segoe UI;background:#eef2f7;margin:0;padding:20px;}
+/* Empty - use dashboard CSS */
 .container{max-width:1100px;margin:auto;background:white;padding:30px;border-radius:12px;box-shadow:0 5px 20px rgba(0,0,0,0.1);}
 h2{text-align:center;color:#1f2937;margin-bottom:25px;}
 .btn{background:#10b981;color:white;padding:12px 24px;border:none;border-radius:10px;cursor:pointer;font-size:16px;transition:0.2s;}

@@ -63,8 +63,7 @@ if (isset($_GET['edit'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Materials</title>
 <style>
-:root {
-  --primary: #22c55e;
+/* Empty - use dashboard CSS */
   --danger: #ef4444;
   --warning: #eab308;
   --dark: #374151;
