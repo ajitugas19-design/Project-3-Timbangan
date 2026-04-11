@@ -112,11 +112,7 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 </style>
 </head>
 <body>
-<?php if ($message): ?>
-<div class="message <?= strpos($message, '✅') === 0 ? 'success' : 'error' ?>">
-    <?= htmlspecialchars($message) ?>
-</div>
-<?php endif; ?>
+<?php /* Success message removed */ ?>
 
 <button class="btn" onclick="openForm()" <?= $edit_data ? 'style="display:none;"' : '' ?>>+ Tambah Supplier</button>
 <?php if ($edit_data): ?>

@@ -111,100 +111,13 @@ $totalPages = ceil($total / $limit);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Laporan</title>
 
-<style>
-body {
-  font-family: 'Segoe UI';
-  background: #eef2f7;
-  margin: 0;
-}
+<link rel="stylesheet" href="../css/dashboard.css">
 
-/* CONTAINER */
-.container {
-  max-width: 1200px;
-  margin: 30px auto;
-}
-
-/* CARD */
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-}
-
-/* HEADER */
-h2 {
-  margin-bottom: 20px;
-}
-
-/* FILTER */
-.filter {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-input, select {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-/* BUTTON */
-.btn {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background: #2563eb;
-}
-
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  background: #1e293b;
-  color: white;
-  padding: 12px;
-}
-
-td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-/* PAGINATION */
-.pagination {
-  margin-top: 15px;
-  text-align: center;
-}
-
-.pagination a {
-  padding: 8px 12px;
-  margin: 3px;
-  background: #e5e7eb;
-  text-decoration: none;
-  border-radius: 6px;
-}
-
-.active {
-  background: #22c55e;
-  color: white;
-}
-</style>
 </head>
 
 
@@ -212,7 +125,7 @@ td {
 
 <div class="container">
 <div class="card">
-<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">
+<div class="filter">
   <a class="btn" href="sidebar/export/export_pdf.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">🖨️ PDF</a>
   <a class="btn" href="sidebar/export/export_excel.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">📊 Excel</a>
   <a class="btn" href="sidebar/export/export_word.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">📝 Word</a>

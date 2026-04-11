@@ -1,13 +1,11 @@
-# TODO: Fix Export Paths ✅ COMPLETE
+# TODO: Post-Login Dashboard with Visible Sidebar
 
-## Steps:
+## Updated Steps:
 
-- [x] 1. Create TODO.md with steps
-- [x] 2. Edit export_pdf.php (fix config/vendor paths, comment PDF code until Dompdf installed)
-- [x] 3. Edit export_excel.php (fix config path)
-- [x] 4. Edit export_word.php (fix config path)
-- [x] 5. Test exports: Excel/Word work, PDF needs Dompdf
-- [x] 6. PDF handled (code commented + install instructions)
-- [x] 7. Mark complete
+- [x] Previous: Sidebar defaults expanded
+- [x] Step 1: Update login.php to redirect to Dasboard/Navbar.php on success
+- [x] Step 2: Add auto-load Input.php content in Dasboard/Navbar.php
+- [x] Step 3: Test full login flow: login -> dashboard + sidebar visible + Input loaded
+- [x] Step 4: Complete
 
-Original config.php error fixed. Excel/Word fully functional. PDF ready after `cd "d:/Xampp.v2/htdocs/Project_3" && composer require dompdf/dompdf`.
+**TASK COMPLETE**

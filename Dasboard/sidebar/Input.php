@@ -19,13 +19,12 @@ $no_record = 'TRAN' . str_pad(($max['max'] ?? 0) + 1, 4, '0', STR_PAD_LEFT);
 
 // SIMPAN
 if (isset($_POST['simpan'])) {
-
     $id_customer = isset($_POST['cek_customer']) ? $_POST['id_customers'] : null;
     $id_supplier = isset($_POST['cek_supplier']) ? $_POST['id_supplier'] : null;
 
     $stmt = $pdo->prepare("INSERT INTO transaksi 
-    (no_record,id_kendaraan,id_supplier,id_material,id_customers,bruto,tara,netto) 
-    VALUES (?,?,?,?,?,?,?,?)");
+    (no_record,id_kendaraan,id_supplier,id_material,id_customers,bruto,tara,netto,tgl_masuk,jam_masuk,tgl_keluar,jam_keluar) 
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
         $_POST['no_record'],
@@ -35,10 +34,14 @@ if (isset($_POST['simpan'])) {
         $id_customer,
         $_POST['bruto'],
         $_POST['tara'],
-        $_POST['netto']
+        $_POST['netto'],
+        $_POST['tgl_masuk'],
+        $_POST['jam_masuk'],
+        $_POST['tgl_keluar'],
+        $_POST['jam_keluar']
     ]);
 
-    echo "<script>alert('Data berhasil disimpan');location='';</script>";
+    echo "<script>alert('Data berhasil disimpan!');</script>";
 }
 ?>
 
@@ -47,16 +50,113 @@ if (isset($_POST['simpan'])) {
 <head>
 <title>Input Timbangan</title>
 
-<style>\n.content-container {\n    background:#e5e5e5;\n    font-family: Arial;\n    padding: 1.5rem;\n    border-radius: var(--radius);\n}\n\n.content-grid {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: clamp(1rem, 3vw, 1.5rem);\n}\n\n.content-label {\n    font-size: 0.9rem;\n    font-weight: 500;\n}\n\n.content-input, .content-select {\n    width: 100%;\n    background: #f3f4f6;\n    border: 1px solid var(--border);\n    padding: clamp(0.75rem, 2vw, 1rem);\n    margin-bottom: 0.75rem;\n    border-radius: 6px;\n}\n\n.content-row {\n    display: flex;\n    gap: 0.75rem;\n}\n\n.content-btn {\n    border: none;\n    padding: 0.75rem 1rem;\n    cursor: pointer;\n    border-radius: 6px;\n}\n\n.content-btn-primary { background:var(--primary); color:white; }\n.content-btn-success { background:var(--primary-dark); color:white; }\n.content-btn-danger { background:#ef4444; color:white; }\n\n.content-center { text-align:center; margin-top:1.5rem; }\n\n.content-box {\n    display:flex;\n    gap:0.75rem;\n}\n\n.content-box > div {\n    flex:1;\n}\n\n.content-small-text {\n    font-size:0.85rem;\n    text-align:center;\n    margin-bottom:0.75rem;\n    color: #6b7280;\n}\n\n.content-check-group {\n    display:flex;\n    align-items:center;\n    gap:0.5rem;\n    margin-bottom:0.5rem;\n}\n\n.content-check-group input {\n    width:auto;\n}\n\n@media (max-width: 768px) {\n  .content-grid, .content-box {\n    grid-template-columns: 1fr;\n    flex-direction: column;\n  }\n  .content-btn {\n    width: 100%;\n  }\n}\n</style>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+  margin: 0;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 30px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+  margin-bottom: 15px;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+label {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+input, select {
+  width: 100%;
+  padding: 7px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.blue { background: #3b82f6; color: white; }
+.green { background: #22c55e; color: white; }
+
+.box {
+  display: flex;
+  gap: 10px;
+}
+
+.box div {
+  flex: 1;
+  position: relative;
+}
+
+.unit {
+  position: absolute;
+  right: 10px;
+  top: 30px;
+  font-size: 12px;
+  color: gray;
+}
+
+.center {
+  text-align: center;
+  margin: 10px 0;
+}
+
+.small-text {
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: gray;
+}
+
+.check-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media(max-width:768px){
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 
 </head>
+
 <body>
 
 <div class="container">
+<h2>Input Transaksi</h2>
 
 <form method="POST">
 
-<div class="grid">
+<div class="content-grid">
 
 <!-- KIRI -->
 <div>
@@ -66,7 +166,7 @@ if (isset($_POST['simpan'])) {
 
 <label>No Polisi</label>
 <div class="row">
-<input type="text" id="nopol" list="listNopol">
+<input type="text" id="nopol" list="listNopol" required>
 <button type="button" class="btn blue">Enter</button>
 </div>
 
@@ -81,22 +181,22 @@ if (isset($_POST['simpan'])) {
 <label>Sopir</label>
 <input type="text" id="sopir" readonly>
 
-<!-- CUSTOMER -->
 <div class="check-group">
 <input type="checkbox" id="cek_customer" name="cek_customer">
-<label style="background:#ef4444;color:white;padding:3px;">Customer</label>
+<label>Customer</label>
 </div>
+
 <select name="id_customers" id="customer" disabled>
 <?php foreach($customers as $c): ?>
 <option value="<?= $c['id_Customers'] ?>"><?= $c['Customers'] ?></option>
 <?php endforeach; ?>
 </select>
 
-<!-- SUPPLIER -->
 <div class="check-group">
 <input type="checkbox" id="cek_supplier" name="cek_supplier">
 <label>Supplier</label>
 </div>
+
 <select name="id_supplier" id="supplier" disabled>
 <?php foreach($suppliers as $s): ?>
 <option value="<?= $s['id_Supplier'] ?>"><?= $s['Nama_Supplier'] ?></option>
@@ -114,36 +214,32 @@ if (isset($_POST['simpan'])) {
 <input type="time" name="jam_masuk">
 
 <label>Tanggal Masuk</label>
-<input type="date" name="tgl_masuk">
+<input type="date" name="tgl_masuk" value="<?= date('Y-m-d') ?>">
 
 </div>
 
 <!-- KANAN -->
 <div>
 
-<div class="small-text">
-Timbang Truk yang belum mengisi full, berdasarkan No polisi<br>
-Seperti Tombol Edit
-</div>
-
-<select>
-<option>-- pilih --</option>
-</select>
+<div class="small-text">Timbang berdasarkan No Polisi</div>
 
 <div class="box">
 <div>
 <label>Bruto</label>
 <input type="number" id="bruto" name="bruto">
+<span class="unit">kg</span>
 </div>
 
 <div>
 <label>Tara</label>
 <input type="number" id="tara" name="tara">
+<span class="unit">kg</span>
 </div>
 
 <div>
 <label>Netto</label>
 <input type="number" id="netto" name="netto" readonly>
+<span class="unit">kg</span>
 </div>
 </div>
 
@@ -173,9 +269,7 @@ Seperti Tombol Edit
 // AUTO SOPIR
 document.getElementById('nopol').addEventListener('input', function(){
     let val = this.value;
-    let options = document.querySelectorAll('#listNopol option');
-    
-    options.forEach(opt=>{
+    document.querySelectorAll('#listNopol option').forEach(opt=>{
         if(opt.value === val){
             document.getElementById('sopir').value = opt.dataset.sopir;
             document.getElementById('id_kendaraan').value = opt.dataset.id;
@@ -183,21 +277,24 @@ document.getElementById('nopol').addEventListener('input', function(){
     });
 });
 
-// HITUNG NETTO
+// HITUNG
 function hitung(){
     let bruto = parseFloat(document.getElementById('bruto').value) || 0;
     let tara = parseFloat(document.getElementById('tara').value) || 0;
     document.getElementById('netto').value = bruto - tara;
 }
 
-// ENABLE DISABLE CHECKBOX
-document.getElementById('cek_customer').addEventListener('change', function(){
-    document.getElementById('customer').disabled = !this.checked;
-});
+document.getElementById('bruto').addEventListener('input', hitung);
+document.getElementById('tara').addEventListener('input', hitung);
 
-document.getElementById('cek_supplier').addEventListener('change', function(){
+// CHECKBOX
+document.getElementById('cek_customer').onchange = function(){
+    document.getElementById('customer').disabled = !this.checked;
+};
+
+document.getElementById('cek_supplier').onchange = function(){
     document.getElementById('supplier').disabled = !this.checked;
-});
+};
 </script>
 
 </body>

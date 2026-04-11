@@ -85,17 +85,22 @@ button:hover {
     <img src="Img/Logo.png" class="logo" alt="Logo">
     <h1>Login</h1>
 
-<form id="loginForm" action="Dasboard/Navbar.php" method="post">
+<form id="loginForm" action="login.php" method="post">
     <?php
     session_start();
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
     if (isset($_GET['error'])) {
         echo '<p style="color:red;">' . htmlspecialchars($_GET['error']) . '</p>';
     }
     if (isset($_GET['success'])) {
         echo '<p style="color:green;">Login berhasil! Redirecting...</p>';
-        echo '<script>setTimeout(() => window.location.href = "Dasboard/Navbar.php", 1000);</script>';
+echo '<script>setTimeout(() => window.location.href = "Dasboard/sidebar/Input.php", 1000);</script>';
     }
     ?>
+    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
 
     <div class="input-group">
         <label>Username</label>
