@@ -119,16 +119,146 @@ $totalPages = ceil($total / $limit);
 <link rel="stylesheet" href="../css/dashboard.css">
 
 </head>
+<style>
+    body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f3f4f6;
+  margin: 0;
+}
 
+/* CARD */
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+/* TITLE */
+h1 {
+  margin-bottom: 10px;
+}
+
+h2 {
+  margin-top: 25px;
+  font-size: 18px;
+  color: #374151;
+}
+
+/* FILTER */
+.filter {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+}
+
+.filter input,
+.filter select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.filter input:focus,
+.filter select:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+/* BUTTON */
+.btn {
+  background: #3b82f6;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #2563eb;
+}
+
+.btn-secondary {
+  background: #6b7280;
+}
+
+/* EXPORT BUTTON */
+.filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th {
+  background: #1f2937;
+  color: white;
+  padding: 12px;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+  background: #f9fafb;
+}
+
+/* ANGKA */
+td:nth-child(7),
+td:nth-child(8),
+td:nth-child(9) {
+  text-align: right;
+  font-weight: 600;
+}
+
+/* PAGINATION */
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination a {
+  display: inline-block;
+  padding: 8px 12px;
+  margin: 2px;
+  border-radius: 6px;
+  background: #e5e7eb;
+  text-decoration: none;
+  color: black;
+}
+
+.pagination a.active {
+  background: #3b82f6;
+  color: white;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .filter {
+    flex-direction: column;
+  }
+}
+</style>
 
 <body>
 
-<div class="container">
 <div class="card">
-<div class="filter">
-  <a class="btn" href="sidebar/export/export_pdf.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">🖨️ PDF</a>
-  <a class="btn" href="sidebar/export/export_excel.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">📊 Excel</a>
-  <a class="btn" href="sidebar/export/export_word.php?dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>">📝 Word</a>
+<h1>📊 Laporan Transaksi</h1>
+
+<div class="filter-row">
+  <a class="btn btn-secondary" href="export/export_pdf.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">🖨️ PDF</a>
+  <a class="btn btn-secondary" href="export/export_excel.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">📊 Excel</a>
+  <a class="btn btn-secondary" href="export/export_word.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">📝 Word</a>
 </div>
 
 <h2>📊 Laporan Transaksi</h2>

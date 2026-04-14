@@ -122,9 +122,8 @@ td{padding:15px;border-bottom:1px solid #e5e7eb;}
 .delete-btn{background:#ef4444;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;}
 .form-slide{position:fixed;right:-400px;top:0;width:380px;height:100%;background:white;padding:25px;transition:.3s;z-index:1002;box-shadow:-10px 0 30px rgba(0,0,0,0.3);overflow-y:auto;}
 .form-slide.active{right:0;}
-.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;z-index:1001;cursor:pointer;}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;z-index:1001;}
 .overlay.active{display:block;}
-.user-overlay{}
 input,textarea,select{width:100%;padding:12px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;font-size:14px;}
 input:focus,textarea:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
 .message{position:fixed;top:20px;right:20px;padding:15px 20px;border-radius:10px;color:white;font-weight:500;z-index:1003;max-width:350px;transform:translateX(400px);transition:.3s;}
@@ -138,7 +137,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#10b981;box-sh
 
 <div class="container">
 <h2>👥 Manajemen User</h2>
-<button class="btn add-user-btn">➕ Tambah User</button>
+<button class="btn" onclick="openForm('add')">➕ Tambah User</button>
 
 <table>
 <tr>
@@ -157,8 +156,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#10b981;box-sh
 <td><?= $u['id_user'] == $current_user_id ? '<span class="status online">🟢 Online</span>' : '<span class="status offline">🔴 Offline</span>' ?></td>
 <td><?= $u['id_user'] == $current_user_id ? 'Anda' : 'User lain' ?></td>
 <td>
-<button class="edit-btn" data-user='<?= json_encode($u) ?>'>Edit</button>
-<button class="delete-btn" data-id="<?= $u['id_user'] ?>">Hapus</button>
+<button class="edit-btn" onclick="openForm('edit', {id_user:<?= $u['id_user'] ?>, nama:'<?= addslashes($u['nama']) ?>', sebagai:'<?= addslashes($u['sebagai']) ?>', user:'<?= addslashes($u['user']) ?>', foto:'<?= addslashes($u['foto']) ?>', keterangan:'<?= addslashes($u['keterangan']) ?>'})">Edit</button>
+<button class="delete-btn" onclick="deleteUser(<?= $u['id_user'] ?>)">Hapus</button>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -166,7 +165,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#10b981;box-sh
 </div>
 
 <!-- MODAL FORM -->
-<div class="overlay" id="overlay"></div>
+<div class="overlay" id="overlay" onclick="closeForm()"></div>
 <div class="form-slide" id="formSlide">
 <h3 id="formTitle">Tambah User Baru</h3>
 <form id="userForm">
@@ -204,113 +203,66 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#10b981;box-sh
 </div>
 
 <button type="submit" class="btn" style="background:#10b981;">💾 Simpan</button>
-<button type="button" class="btn close-form-btn" style="background:#6b7280;">❌ Batal</button>
+<button type="button" class="btn" onclick="closeForm()" style="background:#6b7280;">❌ Batal</button>
 </form>
 </div>
 
 <script>
-// USER MANAGEMENT - Event Delegation (Fix dynamic load)
-// Init saat DOM ready atau setelah content injected
-function initUserManagement() {
-    const content = document.getElementById('content') || document.body;
-    
-    // Form submit (tetap sama, tapi wrap window)
-    const userForm = document.getElementById('userForm');
-    if (userForm && !userForm.dataset.init) {
-        userForm.dataset.init = 'true';
-        userForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '⏳ Menyimpan...';
-            submitBtn.disabled = true;
-
-            try {
-                const response = await fetch(window.USER_PATH || 'sidebar/User.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    window.showUserMessage(result.message || 'Berhasil!', 'success');
-                    window.closeUserForm();
-                    window.loadUserContent(); // Reload via global
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                window.showUserMessage(error.message || 'Error', 'error');
-                console.error('User form error:', error);
-            } finally {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-    }
-    
-    // Event delegation untuk semua buttons
-    content.removeEventListener('click', userClickHandler); // Prevent duplicate
-    content.addEventListener('click', userClickHandler);
-    
-    // Force init for Tambah button if standalone
-    document.querySelector('.add-user-btn')?.addEventListener('click', function(e) {
-        console.log('FORCE Tambah click');
-        window.openUserForm('add');
-    });
-}
-
-let userClickHandler = function(e) {
-    const target = e.target.closest('button');
-    if (!target) return;
-    
-    console.log('Button clicked:', target.className, target.dataset);
+// Universal form submit handler
+document.getElementById('userForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    e.stopPropagation();
     
-    if (target.classList.contains('add-user-btn')) {
-        console.log('Open add form');
-        window.openUserForm('add');
-    } else if (target.classList.contains('edit-btn')) {
-        try {
-            const data = JSON.parse(target.dataset.user);
-            console.log('Edit data:', data);
-            window.openUserForm('edit', data);
-        } catch(err) { console.error('Parse error:', err); }
-    } else if (target.classList.contains('delete-btn')) {
-        const id = parseInt(target.dataset.id);
-        console.log('Delete ID:', id);
-        window.deleteUserUser(id);
-    } else if (target.classList.contains('close-form-btn') || target.closest('.overlay')) {
-        console.log('Close form');
-        window.closeUserForm();
-    }
-};
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ Menyimpan...';
+    submitBtn.disabled = true;
 
-// Global functions (persist across loads)
-window.openUserForm = function(mode = 'add', userData = null) {
+    try {
+        const response = await fetch('sidebar/User.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage(result.message || 'Berhasil!', 'success');
+            closeForm();
+            // Reload parent content
+            if (window.parent && window.parent.loadContent) {
+                window.parent.loadContent('sidebar/User.php', 'User');
+            } else {
+                location.reload();
+            }
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        showMessage(error.message || 'Terjadi kesalahan', 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
+
+function openForm(mode = 'add', userData = null) {
     const form = document.getElementById('userForm');
     const slide = document.getElementById('formSlide');
     const overlay = document.getElementById('overlay');
-    
-    if (!form || !slide) {
-        console.error('User form elements not found');
-        return;
-    }
     
     form.reset();
     document.getElementById('actionType').value = mode;
     
     if (mode === 'edit' && userData) {
-        document.getElementById('formTitle').textContent = 'Edit User: ' + (userData.nama || '');
+        document.getElementById('formTitle').textContent = 'Edit User: ' + userData.nama;
         document.getElementById('editId').value = userData.id_user;
-        document.getElementById('nama').value = userData.nama || '';
-        document.getElementById('sebagai').value = userData.sebagai || '';
-        document.getElementById('username').value = userData.user || '';
-        document.getElementById('foto').value = userData.foto || '';
-        document.getElementById('keterangan').value = userData.keterangan || '';
-        document.getElementById('password').placeholder = 'Kosongkan untuk tidak ubah';
+        document.getElementById('nama').value = userData.nama;
+        document.getElementById('sebagai').value = userData.sebagai;
+        document.getElementById('username').value = userData.user;
+        document.getElementById('foto').value = userData.foto;
+        document.getElementById('keterangan').value = userData.keterangan;
+        document.getElementById('password').placeholder = 'Kosongkan untuk tidak ubah password';
     } else {
         document.getElementById('formTitle').textContent = 'Tambah User Baru';
         document.getElementById('password').placeholder = 'Password minimal 6 karakter';
@@ -318,61 +270,51 @@ window.openUserForm = function(mode = 'add', userData = null) {
     
     slide.classList.add('active');
     overlay.classList.add('active');
-    overlay.classList.add('user-overlay');
-};
+}
 
-window.closeUserForm = function() {
-    const slide = document.getElementById('formSlide');
-    const overlay = document.getElementById('overlay');
-    if (slide) slide.classList.remove('active');
-    if (overlay) overlay.classList.remove('active', 'user-overlay');
-};
+function closeForm() {
+    document.getElementById('formSlide').classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
+}
 
-window.deleteUserUser = function(id) {
-    if (!id || confirm('Yakin hapus user ID ' + id + '?')) {
+function deleteUser(id) {
+    if (confirm('Yakin hapus user ini?')) {
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', id);
         
-        fetch(window.USER_PATH || 'sidebar/User.php', {method: 'POST', body: formData})
+        fetch('sidebar/User.php', {method: 'POST', body: formData})
             .then(res => res.json())
             .then(result => {
                 if (result.success) {
-                    window.showUserMessage(result.message, 'success');
-                    window.loadUserContent();
+                    showMessage(result.message, 'success');
+                    if (window.parent && window.parent.loadContent) {
+                        window.parent.loadContent('sidebar/User.php', 'User');
+                    } else {
+                        location.reload();
+                    }
                 } else {
-                    window.showUserMessage(result.message, 'error');
+                    alert(result.message);
                 }
             })
-            .catch(err => {
-                console.error('Delete error:', err);
-                window.showUserMessage('Error: ' + err, 'error');
-            });
+            .catch(err => alert('Error: ' + err));
     }
-};
+}
 
-window.showUserMessage = function(text, type) {
+function showMessage(text, type) {
     const msg = document.createElement('div');
     msg.className = `message ${type}`;
     msg.textContent = text;
     document.body.appendChild(msg);
-    setTimeout(() => msg.style.transform = 'translateX(0)', 100);
-    setTimeout(() => msg.remove(), 4000);
-};
-
-document.querySelector('.close-form-btn')?.addEventListener('click', window.closeUserForm);
-
-// Auto-init saat load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUserManagement);
-} else {
-    initUserManagement();
+    
+    setTimeout(() => {
+        msg.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+        msg.remove();
+    }, 4000);
 }
-
-// Global loader helper (fix parent issue)
-window.loadUserContent = function() { console.log('Reload user'); if (window.loadContent) window.loadContent('sidebar/User.php','User'); else location.reload(); };
-window.USER_PATH = window.location.pathname.includes('sidebar') ? 'User.php' : 'sidebar/User.php';
-console.log('User.php loaded, path:', window.USER_PATH);
 </script>
 
 </body>

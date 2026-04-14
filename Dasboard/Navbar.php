@@ -36,14 +36,14 @@ if (isset($_GET['logout'])) {
         <h4><?= htmlspecialchars($_SESSION['user_nama']) ?></h4>
     </div>
 
-    <a class="nav-item" onclick="loadContent('sidebar/Input.php','Input')">📥 <span>Input Data</span></a>
-    <a class="nav-item" onclick="loadContent('sidebar/Customers.php','Customers')">👥 <span>Customers</span></a>
-    <a class="nav-item" onclick="loadContent('sidebar/Suppliers.php','Suppliers')">🏭 <span>Suppliers</span></a>
-    <a class="nav-item" onclick="loadContent('sidebar/Materials.php','Materials')">📦 <span>Materials</span></a>
-    <a class="nav-item" onclick="loadContent('sidebar/Informasi_Data.php','Data')">📊 <span>Informasi Data</span></a>
-    <a class="nav-item" onclick="loadContent('sidebar/Laporan.php','Laporan')">📑 <span>Laporan</span></a>
-    <a class="nav-item" onclick="loadContent('sidebar/User.php','User')">👤 <span>User</span></a>
-    <a class="nav-item" onclick="confirmLogout()">🚪 <span>Log Out</span></a>
+    <a class="nav-item" onclick="loadContent('sidebar/Input.php','Input', this)">Input Data</a>
+<a class="nav-item" onclick="loadContent('sidebar/Customers.php','Customers', this)">Customers</a>
+<a class="nav-item" onclick="loadContent('sidebar/Suppliers.php','Suppliers', this)">Suppliers</a>
+<a class="nav-item" onclick="loadContent('sidebar/Materials.php','Materials', this)">Materials</a>
+<a class="nav-item" onclick="loadContent('sidebar/Kendaraan.php','Kendaraan', this)">Kendaraan</a>
+<a class="nav-item" onclick="loadContent('sidebar/Informasi_Data.php','Data', this)">Informasi Data</a>
+<a class="nav-item" onclick="loadContent('sidebar/Laporan.php','Laporan', this)">Laporan</a>
+<a class="nav-item" onclick="loadContent('sidebar/User.php','User', this)">User</a>
 </nav>
 
 <!-- MAIN -->

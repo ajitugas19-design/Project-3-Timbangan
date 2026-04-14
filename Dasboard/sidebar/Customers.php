@@ -6,43 +6,7 @@ if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     exit;
 }
 
-// Handle actions
-$message = '';
-if ($_POST) {
-    $action = $_POST['action'] ?? '';
-    try {
-        switch($action) {
-            case 'add':
-                $nama = trim($_POST['nama'] ?? '');
-                $keterangan = trim($_POST['keterangan'] ?? '');
-                if (empty($nama)) throw new Exception('Nama wajib diisi');
-                $stmt = $pdo->prepare("INSERT INTO customers (Customers, Keterangan) VALUES (?, ?)");
-                $stmt->execute([$nama, $keterangan]);
-                $message = '✅ Customer baru berhasil ditambahkan!';
-                break;
-            
-            case 'edit':
-                $id = (int)$_POST['id'];
-                $nama = trim($_POST['nama'] ?? '');
-                $keterangan = trim($_POST['keterangan'] ?? '');
-                if (empty($nama) || empty($id)) throw new Exception('ID dan nama wajib diisi');
-                $stmt = $pdo->prepare("UPDATE customers SET Customers = ?, Keterangan = ? WHERE id_Customers = ?");
-                $stmt->execute([$nama, $keterangan, $id]);
-                $message = '✅ Customer berhasil diupdate!';
-                break;
-            
-            case 'delete':
-                $id = (int)$_POST['id'];
-                if (empty($id)) throw new Exception('ID wajib diisi');
-                $stmt = $pdo->prepare("DELETE FROM customers WHERE id_Customers = ?");
-                $stmt->execute([$id]);
-                $message = '✅ Customer berhasil dihapus!';
-                break;
-        }
-    } catch (Exception $e) {
-        $message = '❌ Error: ' . $e->getMessage();
-    }
-}
+
 
 // Load data
 $stmt = $pdo->query("SELECT * FROM customers ORDER BY id_Customers DESC");
@@ -108,9 +72,12 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 </style>
 </head>
 <body>
-<?php /* Success message removed */ ?>
+
+<div id="messageContainer"></div>
 
 <button class="btn" onclick="openForm()" <?= $edit_data ? 'style="display:none;"' : '' ?>>+ Tambah</button>
+<input type="hidden" id="tableContainer" value=".table-container">
+<input type="hidden" id="apiEndpoint" value="api/customers_crud.php">
 <?php if ($edit_data): ?>
 <button class="btn" style="background:orange;" onclick="window.location.href='?';">Kembali ke List</button>
 <?php endif; ?>
@@ -135,7 +102,7 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <td data-label="Pesanan"><span style="color:#10b981;font-weight:bold;">📦 0 Pesanan<br><small>(Belum ada data pesanan)</small></span></td>
 <td data-label="Aksi">
     <button class="edit" onclick="editCustomer(<?= $c['id_Customers'] ?>)">✏️ Edit</button>
-    <button class="hapus" onclick="hapusCustomer(<?= $c['id_Customers'] ?>)">🗑️ Hapus</button>
+    <button class="hapus" onclick="hapusCustomer(<?= $c['id_Customers'] ?>)" data-action="delete">🗑️ Hapus</button>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -149,7 +116,7 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <div class="form-overlay" id="overlay" onclick="closeForm()"></div>
 <div class="form-slide" id="formSlide">
 <h3 id="formTitle"><?= $edit_data ? 'Edit Customer' : 'Tambah Customer' ?></h3>
-<form method="POST" id="customerForm">
+<form method="POST" id="customerForm" data-crud-form>
 <input type="hidden" name="action" id="actionInput" value="<?= $edit_data ? 'edit' : 'add' ?>">
 <?php if ($edit_data): ?><input type="hidden" name="id" value="<?= $edit_data['id_Customers'] ?>"><?php endif; ?>
 <input type="text" name="nama" id="nama" placeholder="Nama" value="<?= htmlspecialchars($edit_data['Customers'] ?? '') ?>" required>
@@ -171,28 +138,76 @@ function closeForm() {
     document.getElementById('formSlide').classList.remove('active');
     document.getElementById('overlay').classList.remove('active');
     editId = null;
-    window.location.href = '?';
+    // No reload - stay on list
 }
 
 function editCustomer(id) {
-    editId = id;
-    window.location.href = '?edit=' + id;
+    fetch(`?edit=${id}`)
+      .then(res => res.text())
+      .then(html => {
+        document.open();
+        document.write(html);
+        document.close();
+        openForm(); // Re-attach listeners
+      });
 }
 
 function hapusCustomer(id) {
     if (confirm('Yakin hapus customer ini?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.innerHTML = `<input type="hidden" name="action" value="delete">
-                          <input type="hidden" name="id" value="${id}">`;
-        document.body.appendChild(form);
-        form.submit();
+        crudAjax({action: 'delete', id: id});
     }
 }
 
 <?php if ($edit_data): ?>
 openForm();
 <?php endif; ?>
+
+// Universal CRUD AJAX
+function crudAjax(data) {
+  const apiUrl = document.getElementById('apiEndpoint').value;
+  const tableSel = document.getElementById('tableContainer').value;
+  const form = document.getElementById('customerForm');
+  
+  const formData = new FormData(form || new FormData());
+  Object.entries(data).forEach(([k,v]) => formData.append(k,v));
+  
+  const btn = form?.querySelector('button[type="submit"]') || document.activeElement;
+  const origText = btn?.innerHTML;
+  btn && (btn.innerHTML = '⏳ ...');
+  btn && (btn.disabled = true);
+  
+  fetch(apiUrl, {method: 'POST', body: formData})
+    .then(res => res.json())
+    .then(result => {
+      showMessage(result.message, result.success ? 'success' : 'error');
+      if (result.success) {
+        form?.reset();
+        closeForm();
+        if (window.parent?.loadContent) {
+          window.parent.loadContent('sidebar/Customers.php');
+        } else {
+          location.reload();
+        }
+      }
+    })
+    .catch(err => showMessage('❌ Gagal: ' + err, 'error'))
+    .finally(() => {
+      btn && (btn.innerHTML = origText);
+      btn && (btn.disabled = false);
+    });
+}
+
+function showMessage(msg, type) {
+  const cont = document.getElementById('messageContainer');
+  cont.innerHTML = `<div class="message ${type}">${msg}</div>`;
+  setTimeout(() => cont.innerHTML = '', 5000);
+}
+
+// Form submit handler
+document.getElementById('customerForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+  crudAjax({});
+});
 </script>
 </body>
 </html>

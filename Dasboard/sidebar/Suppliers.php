@@ -6,45 +6,7 @@ if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     exit;
 }
 
-// Handle actions
-$message = '';
-if ($_POST) {
-    $action = $_POST['action'] ?? '';
-    try {
-        switch($action) {
-            case 'add':
-                $nama = trim($_POST['nama'] ?? '');
-                $asal = trim($_POST['lokasi_asal'] ?? '');
-                $tujuan = trim($_POST['lokasi_tujuan'] ?? '');
-                if (empty($nama) || empty($asal) || empty($tujuan)) throw new Exception('Semua field wajib diisi');
-                $stmt = $pdo->prepare("INSERT INTO supplier (Nama_Supplier, Lokasi_Asal, Lokasi_Tujuan) VALUES (?, ?, ?)");
-                $stmt->execute([$nama, $asal, $tujuan]);
-                $message = '✅ Supplier baru berhasil ditambahkan!';
-                break;
-            
-            case 'edit':
-                $id = (int)$_POST['id'];
-                $nama = trim($_POST['nama'] ?? '');
-                $asal = trim($_POST['lokasi_asal'] ?? '');
-                $tujuan = trim($_POST['lokasi_tujuan'] ?? '');
-                if (empty($nama) || empty($asal) || empty($tujuan) || empty($id)) throw new Exception('ID dan field wajib diisi');
-                $stmt = $pdo->prepare("UPDATE supplier SET Nama_Supplier = ?, Lokasi_Asal = ?, Lokasi_Tujuan = ? WHERE id_Supplier = ?");
-                $stmt->execute([$nama, $asal, $tujuan, $id]);
-                $message = '✅ Supplier berhasil diupdate!';
-                break;
-            
-            case 'delete':
-                $id = (int)$_POST['id'];
-                if (empty($id)) throw new Exception('ID wajib diisi');
-                $stmt = $pdo->prepare("DELETE FROM supplier WHERE id_Supplier = ?");
-                $stmt->execute([$id]);
-                $message = '✅ Supplier berhasil dihapus!';
-                break;
-        }
-    } catch (Exception $e) {
-        $message = '❌ Error: ' . $e->getMessage();
-    }
-}
+
 
 // Load data
 $stmt = $pdo->query("SELECT s.*, COUNT(t.id_transaksi) as total_transaksi FROM supplier s LEFT JOIN transaksi t ON s.id_Supplier = t.id_supplier GROUP BY s.id_Supplier ORDER BY s.id_Supplier DESC");
@@ -111,9 +73,12 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 </style>
 </head>
 <body>
-<?php /* Success message removed */ ?>
+
+<div id="messageContainer"></div>
 
 <button class="btn" onclick="openForm()" <?= $edit_data ? 'style="display:none;"' : '' ?>>+ Tambah Supplier</button>
+<input type="hidden" id="tableContainer" value=".table-container">
+<input type="hidden" id="apiEndpoint" value="api/suppliers_crud.php">
 <?php if ($edit_data): ?>
 <button class="btn" style="background:orange;" onclick="window.location.href='?';">Kembali ke List</button>
 <?php endif; ?>

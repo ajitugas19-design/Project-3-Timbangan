@@ -1,6 +1,11 @@
 <?php
 require_once '../../../config.php';
 
+if (!isLoggedIn()) {
+    header('Location: ../../../Index.php');
+    exit;
+}
+
 $dari   = $_GET['dari'] ?? '';
 $sampai = $_GET['sampai'] ?? '';
 $search = $_GET['search'] ?? '';

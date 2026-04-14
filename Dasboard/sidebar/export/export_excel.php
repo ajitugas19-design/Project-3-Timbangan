@@ -1,6 +1,11 @@
 <?php
 require_once '../../../config.php';
 
+if (!isLoggedIn()) {
+    header('Location: ../../../Index.php');
+    exit;
+}
+
 header("Content-type: application/vnd-ms-excel");
 header("Content-Disposition: attachment; filename=laporan.xls");
 

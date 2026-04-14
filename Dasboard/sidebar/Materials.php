@@ -6,42 +6,7 @@ if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     exit;
 }
 
-// Handle actions
-$message = '';
-if ($_POST) {
-    $action = $_POST['action'] ?? '';
-    try {
-        switch($action) {
-            case 'add':
-            case 'edit':
-                $kode = trim($_POST['kode'] ?? '');
-                $material = trim($_POST['nama'] ?? '');
-                $id = (int)($_POST['id'] ?? 0);
-                if (empty($kode) || empty($material)) throw new Exception('Kode dan nama material wajib diisi');
-                if ($action === 'add') {
-                    $stmt = $pdo->prepare("INSERT INTO material (Kode, Material) VALUES (?, ?)");
-                    $stmt->execute([$kode, $material]);
-                    $message = '✅ Material baru berhasil ditambahkan!';
-                } else {
-                    if (!$id) throw new Exception('ID diperlukan untuk edit');
-                    $stmt = $pdo->prepare("UPDATE material SET Kode = ?, Material = ? WHERE id_Material = ?");
-                    $stmt->execute([$kode, $material, $id]);
-                    $message = '✅ Material berhasil diupdate!';
-                }
-                break;
-            
-            case 'delete':
-                $id = (int)$_POST['id'];
-                if (!$id) throw new Exception('ID diperlukan');
-                $stmt = $pdo->prepare("DELETE FROM material WHERE id_Material = ?");
-                $stmt->execute([$id]);
-                $message = '✅ Material berhasil dihapus!';
-                break;
-        }
-    } catch (Exception $e) {
-        $message = '❌ Error: ' . $e->getMessage();
-    }
-}
+
 
 // Load data
 $stmt = $pdo->query("SELECT * FROM material ORDER BY Kode");
@@ -107,13 +72,12 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 </style>
 </head>
 <body>
-<?php if ($message): ?>
-<div class="message <?= strpos($message, '✅') === 0 ? 'success' : 'error' ?> ">
-    <?= htmlspecialchars($message) ?>
-</div>
-<?php endif; ?>
+
+<div id="messageContainer"></div>
 
 <button class="btn" onclick="openForm()" <?= $edit_data ? 'style="display:none;"' : '' ?>>+ Tambah Material</button>
+<input type="hidden" id="tableContainer" value=".table-container">
+<input type="hidden" id="apiEndpoint" value="api/materials_crud.php">
 <?php if ($edit_data): ?>
 <button class="btn" style="background:orange;" onclick="window.location.href='?';">Kembali ke List</button>
 <?php endif; ?>
@@ -138,7 +102,7 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <td data-label="Transaksi"><span style="color:#10b981;font-weight:bold;">📦 0 Transaksi<br><small>(Belum ada data transaksi)</small></span></td>
 <td data-label="Aksi">
     <button class="edit" onclick="editMaterial(<?= $m['id_Material'] ?>)">✏️ Edit</button>
-    <button class="hapus" onclick="hapusMaterial(<?= $m['id_Material'] ?> )">🗑️ Hapus</button>
+    <button class="hapus" onclick="hapusMaterial(<?= $m['id_Material'] ?>)" data-action="delete">🗑️ Hapus</button>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -152,7 +116,7 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <div class="form-overlay" id="overlay" onclick="closeForm()"></div>
 <div class="form-slide" id="formSlide">
 <h3 id="formTitle"><?= $edit_data ? 'Edit Material' : 'Tambah Material' ?></h3>
-<form method="POST" id="materialForm">
+<form method="POST" id="materialForm" data-crud-form>
 <input type="hidden" name="action" id="actionInput" value="<?= $edit_data ? 'edit' : 'add' ?>">
 <?php if ($edit_data): ?><input type="hidden" name="id" value="<?= $edit_data['id_Material'] ?>"><?php endif; ?>
 <input type="text" name="kode" id="kode" placeholder="Kode Material" value="<?= isset($edit_data['Kode']) ? htmlspecialchars($edit_data['Kode']) : '' ?>" required>
@@ -182,18 +146,59 @@ function editMaterial(id) {
 
 function hapusMaterial(id) {
     if (confirm('Hapus material?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.innerHTML = `<input type="hidden" name="action" value="delete">
-                          <input type="hidden" name="id" value="${id}">`;
-        document.body.appendChild(form);
-        form.submit();
+        crudAjax({action: 'delete', id: id});
     }
 }
 
 <?php if ($edit_data): ?>
 openForm();
 <?php endif; ?>
+
+// Universal CRUD AJAX 
+function crudAjax(data) {
+  const apiUrl = document.getElementById('apiEndpoint').value;
+  const form = document.getElementById('materialForm');
+  
+  const formData = new FormData(form || new FormData());
+  Object.entries(data).forEach(([k,v]) => formData.append(k,v));
+  
+  const btn = form?.querySelector('button[type="submit"]') || document.activeElement;
+  const origText = btn?.innerHTML;
+  btn && (btn.innerHTML = '⏳ ...');
+  btn && (btn.disabled = true);
+  
+  fetch(apiUrl, {method: 'POST', body: formData})
+    .then(res => res.json())
+    .then(result => {
+      showMessage(result.message, result.success ? 'success' : 'error');
+      if (result.success) {
+        form?.reset();
+        closeForm();
+        if (window.parent?.loadContent) {
+          window.parent.loadContent('sidebar/Materials.php');
+        } else {
+          location.reload();
+        }
+      }
+    })
+    .catch(err => showMessage('❌ Gagal: ' + err, 'error'))
+    .finally(() => {
+      btn && (btn.innerHTML = origText);
+      btn && (btn.disabled = false);
+    });
+}
+
+function showMessage(msg, type) {
+  const cont = document.getElementById('messageContainer');
+  cont.innerHTML = `<div class="message ${type}">${msg}</div>`;
+  setTimeout(() => cont.innerHTML = '', 5000);
+}
+
+// Form submit handler
+document.getElementById('materialForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+  crudAjax({});
+});
 </script>
 </body>
 </html>
