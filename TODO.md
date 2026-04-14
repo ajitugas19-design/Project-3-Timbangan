@@ -1,24 +1,35 @@
-# Progress Fix Button User.php (Approved Plan)
+# TODO: Benahi customers.php agar bisa hapus data dengan aman
 
-# Progress Fix Button User.php (Approved Plan)
+## Step 1: Buat rencana edit (✅ Selesai)
 
-**Status**: ✅ COMPLETED
+- Analisis file Customers.php & customers_crud.php
+- Identifikasi masalah: tombol hapus tidak ada konfirmasi JS
+- Rencana: tambah onclick confirm pada button hapus
 
-## Steps:
+## Step 2: Konfirmasi rencana dengan user (✅ Selesai)
 
-- [x] 1. Create TODO.md (tracking)
-- [x] 2. Backup User.php → User.php.bak
-- [x] 3. Edit User.php: Event delegation + window scope fix (5 edits applied)
-- [x] 4. Test via Navbar.php → buttons now work via delegation
-- [x] 5. Clean TODO + complete
+- User konfirmasi via chat
 
-**Result**: ✅ Button di User.php **SEKARANG BISA DIKLIK** via Navbar.php!
+## Step 3: Edit file Customers.php (✅ Selesai)
 
-**Test**:
+- Tambah onclick="return confirm('Yakin hapus customer « <?= htmlspecialchars($c['Customers']) ?> »?')" pada button hapus
 
-1. Buka `http://localhost/Project_3/Dasboard/Navbar.php`
-2. Klik menu **User**
-3. Coba **Tambah/Edit/Hapus** → Modal terbuka, AJAX work
-4. F12 Console → No errors
+## Step 4: Test fungsi hapus (✅ Selesai - Edit dikonfirmasi sukses, konfirmasi JS ditambah dengan nama customer)
 
-Backup: `Dasboard/sidebar/User.php.bak` (revert if need)
+## Update berdasarkan feedback: AJAX add/edit (no reload + message)
+
+## Step 6: Konfirmasi rencana AJAX (✅ Selesai - User bilang "ok")
+
+## Step 7: Implement AJAX di Customers.php (✅ Selesai)
+
+- Buat ulang Customers.php dengan AJAX form + loadTable + message system
+- Tambah case 'get_all' di customers_crud.php untuk reload table
+
+## Final Update (No API sesuai request user)
+
+## Step 9: Revert ke self AJAX + PHP handler (✅ Selesai)
+- Tambah PHP POST JSON handler di Customers.php untuk add/edit (delete tetap redirect)
+- AJAX fetch('') ke self → JSON response → toast + reloadTable()
+- No API usage, tetap 1 file
+
+✅ FULLY FIXED! Semua sesuai perintah "tetap seperti yang saya perintah"

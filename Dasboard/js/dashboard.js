@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  // ================= SIDEBAR TOGGLE =================
+  // ================= SIDEBAR =================
   function toggleSidebar() {
     sidebar.classList.toggle("collapsed");
     main.classList.toggle("sidebar-collapsed");
@@ -28,25 +28,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   overlay.addEventListener("click", toggleSidebar);
 
-  // ================= SET ACTIVE MENU =================
+  // ================= ACTIVE MENU =================
   window.setActive = function (el) {
-    document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+    document
+      .querySelectorAll(".nav-item")
+      .forEach((i) => i.classList.remove("active"));
     el.classList.add("active");
 
-    // Auto close sidebar (mobile)
     if (window.innerWidth < 768) {
       toggleSidebar();
     }
   };
 
-  // ================= LOAD CONTENT =================
+  // ================= LOAD CONTENT (FIX TOTAL) =================
   window.loadContent = async function (url, title = "", el = null) {
     if (title) pageTitle.textContent = title;
 
-    // Active menu
     if (el) setActive(el);
 
-    // Loading UI
     content.innerHTML = `
       <div style="text-align:center;padding:50px;">
         <div style="font-size:18px;">⏳ Loading...</div>
@@ -61,25 +60,39 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const html = await response.text();
-      content.innerHTML = html;
 
-      // ================= FIX SCRIPT =================
-      // Jalankan ulang script dari halaman yang di-load
-      const scripts = content.querySelectorAll("script");
-      scripts.forEach(oldScript => {
+      // ================= PARSE =================
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+
+      // ================= ISI CONTENT =================
+      content.innerHTML = doc.body.innerHTML;
+
+      // ================= HAPUS SCRIPT LAMA =================
+      document
+        .querySelectorAll("script[data-dynamic]")
+        .forEach((s) => s.remove());
+
+      // ================= JALANKAN SCRIPT BARU =================
+      const scripts = doc.querySelectorAll("script");
+
+      scripts.forEach((oldScript) => {
         const newScript = document.createElement("script");
+        newScript.setAttribute("data-dynamic", "true");
+
         if (oldScript.src) {
-          newScript.src = oldScript.src;
+          newScript.src = oldScript.src + "?v=" + Date.now(); // anti cache
         } else {
           newScript.textContent = oldScript.textContent;
         }
+
         document.body.appendChild(newScript);
       });
 
       console.log("✅ Load sukses:", url);
-
     } catch (error) {
       console.error("❌ Load error:", error);
+
       content.innerHTML = `
         <div style="color:red;text-align:center;padding:40px;">
           ❌ Gagal memuat halaman<br>
@@ -96,9 +109,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  // ================= AUTO LOAD DEFAULT =================
+  // ================= AUTO LOAD =================
   window.addEventListener("load", () => {
     loadContent("sidebar/Input.php", "Input");
   });
-
 });
