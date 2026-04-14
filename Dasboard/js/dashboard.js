@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document
       .querySelectorAll(".nav-item")
       .forEach((i) => i.classList.remove("active"));
+
     el.classList.add("active");
 
     if (window.innerWidth < 768) {
@@ -40,48 +41,55 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  // ================= LOAD CONTENT (FIX TOTAL) =================
+  // ================= LOAD CONTENT (FIX CSS + JS) =================
   window.loadContent = async function (url, title = "", el = null) {
     if (title) pageTitle.textContent = title;
-
     if (el) setActive(el);
 
     content.innerHTML = `
       <div style="text-align:center;padding:50px;">
-        <div style="font-size:18px;">⏳ Loading...</div>
+        ⏳ Loading...
       </div>
     `;
 
     try {
       const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error("HTTP error " + response.status);
-      }
+      if (!response.ok) throw new Error("HTTP " + response.status);
 
       const html = await response.text();
-
-      // ================= PARSE =================
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
 
-      // ================= ISI CONTENT =================
+      // ================= BODY CONTENT =================
       content.innerHTML = doc.body.innerHTML;
 
-      // ================= HAPUS SCRIPT LAMA =================
-      document
-        .querySelectorAll("script[data-dynamic]")
-        .forEach((s) => s.remove());
+      // ================= CSS INJECTION FIX =================
+      const cssList = doc.querySelectorAll("link[rel='stylesheet'], style");
 
-      // ================= JALANKAN SCRIPT BARU =================
+      cssList.forEach((node) => {
+        const clone = node.cloneNode(true);
+
+        if (node.tagName === "LINK") {
+          const exists = [...document.querySelectorAll("link")].some(
+            (l) => l.href === node.href,
+          );
+
+          if (!exists) {
+            document.head.appendChild(clone);
+          }
+        } else {
+          document.head.appendChild(clone);
+        }
+      });
+
+      // ================= SCRIPT EXECUTION SAFE =================
       const scripts = doc.querySelectorAll("script");
 
       scripts.forEach((oldScript) => {
         const newScript = document.createElement("script");
-        newScript.setAttribute("data-dynamic", "true");
 
         if (oldScript.src) {
-          newScript.src = oldScript.src + "?v=" + Date.now(); // anti cache
+          newScript.src = oldScript.src + "?v=" + Date.now();
         } else {
           newScript.textContent = oldScript.textContent;
         }
@@ -89,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(newScript);
       });
 
-      console.log("✅ Load sukses:", url);
+      console.log("✅ Load sukses + CSS fixed:", url);
     } catch (error) {
       console.error("❌ Load error:", error);
 

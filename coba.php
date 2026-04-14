@@ -16,13 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'add') {
             $nama_supplier = trim($_POST['nama_supplier']);
-            $lokasi_asal  = trim($_POST['lokasi_asal']);
-            $lokasi_tujuan  = trim($_POST['lokasi_tujuan']);
+            $kLokasi_Asal  = trim($_POST['kLokasi_Asal']);
+            $kLokasi_Tujuan  = trim($_POST['kLokasi_Tujuan']);
 
-            if (!$nama_supplier) throw new Exception('Nama wajib diisi');
+            if (!$nama) throw new Exception('Nama wajib diisi');
 
-            $pdo->prepare("INSERT INTO supplier (Nama_Supplier, Lokasi_Asal, Lokasi_Tujuan) VALUES (?,?,?)")
-                ->execute([$nama_supplier, $lokasi_asal, $lokasi_tujuan]);
+            $pdo->prepare("INSERT INTO Supplier (Nama_Supplier,Lokasi_Asal,Lokasi_Tujuan) VALUES (?,?,?)")
+                ->execute([$Nama_Supplier,$Lokasi_Asal,$Lokasi_Tujuan]);
 
             echo json_encode(['success'=>true,'message'=>'✅ Berhasil tambah']);
         }
@@ -30,13 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'edit') {
             $id   = (int)$_POST['id'];
             $nama_supplier = trim($_POST['nama_supplier']);
-            $lokasi_asal  = trim($_POST['lokasi_asal']);
-            $lokasi_tujuan  = trim($_POST['lokasi_tujuan']);
+            $kLokasi_Asal  = trim($_POST['kLokasi_Asal']);
+            $kLokasi_Tujan  = trim($_POST['kLokasi_Tujuan']);
 
             if (!$id || !$nama_supplier) throw new Exception('Data tidak valid');
 
-            $pdo->prepare("UPDATE supplier SET Nama_Supplier=?, Lokasi_Asal=?, Lokasi_Tujuan=? WHERE id_supplier=?")
-                ->execute([$nama_supplier, $lokasi_asal, $lokasi_tujuan, $id]);
+            $pdo->prepare("UPDATE customers SET Customers=?,Keterangan=? WHERE id_Customers=?")
+                ->execute([$nama_supplier,$kLokasi_Asal,$kLokasi_Tujan,$id]);
 
             echo json_encode(['success'=>true,'message'=>'✅ Berhasil update']);
         }
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ================= LOAD DATA =================
+// ================= LOAD =================
 $data = $pdo->query("SELECT * FROM supplier ORDER BY id_supplier DESC")->fetchAll();
 ?>
 
@@ -69,6 +69,7 @@ $data = $pdo->query("SELECT * FROM supplier ORDER BY id_supplier DESC")->fetchAl
 <title>Supplier</title>
 
 <style>
+/* CSS KAMU TIDAK DIUBAH */
 --danger: #ef4444;
 --warning: #eab308;
 --dark: #374151;
@@ -108,35 +109,19 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <div class="table-container">
 <table>
 <thead>
-<tr>
-    <th>No</th>
-    <th>Nama Supplier</th>
-    <th>Lokasi Asal</th>
-    <th>Lokasi Tujuan</th>
-    <th>Opsi</th>
-</tr>
+<tr><th>No</th><th>Nama Supplier</th><th>Lokasi Asal</th><th>Lokasi Tujuan</th><th>Opsi</th></tr>
 </thead>
 
 <tbody id="tbody">
 <?php $no=1; foreach($data as $d): ?>
 <tr>
 <td><?= $no++ ?></td>
-<td><?= htmlspecialchars($d['Nama_Supplier']) ?></td>
+<td><?= htmlspecialchars($d['Nama_supplier']) ?></td>
 <td><?= htmlspecialchars($d['Lokasi_Asal']) ?></td>
 <td><?= htmlspecialchars($d['Lokasi_Tujuan']) ?></td>
 <td>
-
-<!-- FIX UTAMA ADA DI SINI -->
-<button class="edit"
-onclick='openEdit(<?= htmlspecialchars(json_encode($d), ENT_QUOTES, "UTF-8") ?>)'>
-✏️
-</button>
-
-<button class="hapus"
-onclick="hapus(<?= isset($d['id_supplier']) ? (int)$d['id_supplier'] : 0 ?>)">
-🗑️
-</button>
-
+<button class="edit" onclick='openEdit(<?= json_encode($d) ?>)'>✏️</button>
+<button class="hapus" onclick="hapus(<?= $d['id_Customers'] ?>)">🗑️</button>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -154,9 +139,8 @@ onclick="hapus(<?= isset($d['id_supplier']) ? (int)$d['id_supplier'] : 0 ?>)">
 <input type="hidden" name="action" id="action">
 <input type="hidden" name="id" id="id">
 
-<input type="text" name="nama_supplier" id="nama_supplier" placeholder="Nama Supplier" required>
-<input type="text" name="lokasi_asal" id="lokasi_asal" placeholder="Lokasi Asal">
-<input type="text" name="lokasi_tujuan" id="lokasi_tujuan" placeholder="Lokasi Tujuan">
+<input type="text" name="nama" id="nama" placeholder="Nama" required>
+<input type="text" name="keterangan" id="ket" placeholder="Keterangan">
 
 <button type="submit" class="btn-save">Simpan</button>
 <button type="button" class="btn-cancel" onclick="closeForm()">Batal</button>
@@ -164,12 +148,27 @@ onclick="hapus(<?= isset($d['id_supplier']) ? (int)$d['id_supplier'] : 0 ?>)">
 </div>
 
 <script>
+const slide = document.getElementById('slide');
+const overlay = document.getElementById('overlay');
+const form = document.getElementById('form');
+
+
 (function(){
 
+// ================= INIT =================
 const form = document.getElementById('form');
 const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
+const tbody = document.getElementById('tbody');
 
+if (!form) return;
+
+// ================= URL FIX =================
+const BASE_URL = window.location.pathname.includes('Supplier.php')
+  ? ''
+  : 'sidebar/supplier.php';
+
+// ================= FORM CONTROL =================
 function openForm(){
     slide.classList.add('active');
     overlay.classList.add('active');
@@ -181,26 +180,29 @@ function closeForm(){
 }
 
 overlay.onclick = closeForm;
+slide.onclick = e => e.stopPropagation();
 
+// ================= ADD =================
 window.openAdd = function(){
     form.reset();
-    document.getElementById('action').value = 'add';
+    form.action.value = 'add';
     document.getElementById('title').innerText = 'Tambah Supplier';
     openForm();
 }
 
+// ================= EDIT =================
 window.openEdit = function(d){
     form.reset();
-    document.getElementById('action').value = 'edit';
-    form.id.value = d.id_supplier;
-    form.nama_supplier.value = d.Nama_Supplier;
-    form.lokasi_asal.value = d.Lokasi_Asal;
-    form.lokasi_tujuan.value = d.Lokasi_Tujuan;
-
+    form.action.value = 'edit';
+    form.id.value = d.id_Supplier;
+    form.nama_supplier.value = d.nama_supplier;
+    form.lokasi_asal.value = d.lokasi_asal ;
+    form.lokasi_asal.value = d.lokasi_asal || '';
     document.getElementById('title').innerText = 'Edit Supplier';
     openForm();
 }
 
+// ================= DELETE =================
 window.hapus = function(id){
     if(!confirm('Hapus data?')) return;
 
@@ -208,35 +210,61 @@ window.hapus = function(id){
     fd.append('action','delete');
     fd.append('id',id);
 
-    fetch('',{
+    fetch(BASE_URL,{
         method:'POST',
         body:fd
     })
     .then(r=>r.json())
     .then(res=>{
-        alert(res.message);
-        if(res.success) location.reload();
-    });
+        show(res.message,res.success);
+        if(res.success) loadTable();
+    })
+    .catch(()=>show('❌ Gagal hapus',false));
 }
 
+// ================= SUBMIT =================
 form.addEventListener('submit', function(e){
     e.preventDefault();
 
     let fd = new FormData(form);
 
-    fetch('',{
+    fetch(BASE_URL,{
         method:'POST',
         body:fd
     })
     .then(r=>r.json())
     .then(res=>{
-        alert(res.message);
+        show(res.message,res.success);
         if(res.success){
             closeForm();
-            location.reload();
+            loadTable();
+        }
+    })
+    .catch(()=>show('❌ Gagal simpan',false));
+});
+
+// ================= RELOAD TABLE (FIX PENTING) =================
+function loadTable(){
+    fetch(BASE_URL)
+    .then(r=>r.text())
+    .then(html=>{
+        const doc = new DOMParser().parseFromString(html,'text/html');
+        const newTbody = doc.getElementById('tbody');
+
+        if (newTbody) {
+            tbody.innerHTML = newTbody.innerHTML;
         }
     });
-});
+}
+
+// ================= NOTIF =================
+function show(msg, ok=true){
+    let d=document.createElement('div');
+    d.className='message '+(ok?'success':'error');
+    d.innerText=msg;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),3000);
+}
 
 })();
 </script>
