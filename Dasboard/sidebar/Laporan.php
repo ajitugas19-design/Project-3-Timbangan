@@ -1,7 +1,6 @@
-<?php 
+<?php
 require_once '../../config.php';
 
-// ================= CEK LOGIN =================
 if (!isLoggedIn()) {
     header('Location: ../../Index.php');
     exit;
@@ -9,7 +8,7 @@ if (!isLoggedIn()) {
 
 date_default_timezone_set("Asia/Jakarta");
 
-// ================= PARAM =================
+/* ===================== PARAM ===================== */
 $dari   = $_GET['dari'] ?? '';
 $sampai = $_GET['sampai'] ?? '';
 $search = $_GET['search'] ?? '';
@@ -17,15 +16,18 @@ $page   = max(1, (int)($_GET['page'] ?? 1));
 $limit  = max(1, min(50, (int)($_GET['limit'] ?? 10)));
 $offset = ($page - 1) * $limit;
 
-// ================= QUERY UTAMA =================
+/* ===================== QUERY DATA ===================== */
 $sql = "
 SELECT 
 t.id_transaksi,
 t.no_record,
 IFNULL(k.Sopir,'-') as Sopir,
 IFNULL(k.Nopol,'-') as Nopol,
-IFNULL(wi.tanggal_in,'-') as tanggal_in,
-IFNULL(wo.tanggal_out,'-') as tanggal_out,
+DATE_FORMAT(wi.tanggal_in,'%d-%m-%Y') as tgl_in,
+DATE_FORMAT(wi.tanggal_in,'%H:%i:%s') as jam_in,
+
+DATE_FORMAT(wo.tanggal_out,'%d-%m-%Y') as tgl_out,
+DATE_FORMAT(wo.tanggal_out,'%H:%i:%s') as jam_out,
 IFNULL(t.bruto,0) as bruto,
 IFNULL(t.tara,0) as tara,
 IFNULL(t.netto,0) as netto
@@ -38,18 +40,17 @@ WHERE 1=1
 
 $params = [];
 
-// ================= FILTER AMAN =================
-if (!empty($dari)) {
-    $sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) >= :dari)";
+if ($dari != '') {
+    $sql .= " AND DATE(wi.tanggal_in) >= :dari";
     $params[':dari'] = $dari;
 }
 
-if (!empty($sampai)) {
-    $sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) <= :sampai)";
+if ($sampai != '') {
+    $sql .= " AND DATE(wi.tanggal_in) <= :sampai";
     $params[':sampai'] = $sampai;
 }
 
-if (!empty($search)) {
+if ($search != '') {
     $sql .= " AND (
         t.no_record LIKE :search OR
         k.Sopir LIKE :search OR
@@ -58,24 +59,21 @@ if (!empty($search)) {
     $params[':search'] = "%$search%";
 }
 
-// ================= PAGINATION =================
 $sql .= " ORDER BY t.id_transaksi DESC LIMIT :limit OFFSET :offset";
 
 $stmt = $pdo->prepare($sql);
 
-// bind filter
 foreach ($params as $key => $val) {
     $stmt->bindValue($key, $val);
 }
 
-// bind limit offset
-$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
+
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ================= TOTAL DATA =================
+/* ===================== TOTAL ===================== */
 $total_sql = "
 SELECT COUNT(*)
 FROM transaksi t
@@ -84,13 +82,10 @@ LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
 WHERE 1=1
 ";
 
-if (!empty($dari)) {
-    $total_sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) >= :dari)";
-}
-if (!empty($sampai)) {
-    $total_sql .= " AND (wi.tanggal_in IS NULL OR DATE(wi.tanggal_in) <= :sampai)";
-}
-if (!empty($search)) {
+if ($dari != '') $total_sql .= " AND DATE(wi.tanggal_in) >= :dari";
+if ($sampai != '') $total_sql .= " AND DATE(wi.tanggal_in) <= :sampai";
+
+if ($search != '') {
     $total_sql .= " AND (
         t.no_record LIKE :search OR
         k.Sopir LIKE :search OR
@@ -106,185 +101,243 @@ foreach ($params as $key => $val) {
 
 $total_stmt->execute();
 $total = $total_stmt->fetchColumn();
-
 $totalPages = ceil($total / $limit);
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Laporan</title>
+<title>Laporan Transaksi</title>
 
-<link rel="stylesheet" href="../css/dashboard.css">
-
-</head>
 <style>
-    body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f3f4f6;
-  margin: 0;
+  *{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-/* CARD */
-.card {
-  background: white;
-  padding: 25px;
-  border-radius: 14px;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+
+
+body.sidebar-close #main{
+    margin-left:80px;
+    width:calc(100% - 80px);
 }
 
-/* TITLE */
-h1 {
-  margin-bottom: 10px;
+/* ================= WRAPPER ================= */
+.wrapper{
+    padding:20px;
 }
 
-h2 {
-  margin-top: 25px;
-  font-size: 18px;
-  color: #374151;
+.card{
+    background:#fff;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
 
-/* FILTER */
-.filter {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 15px 0;
+/* ================= HEADER ================= */
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:15px;
 }
 
-.filter input,
-.filter select {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+.title h1{
+    font-size:22px;
+    font-weight:600;
 }
 
-.filter input:focus,
-.filter select:focus {
-  border-color: #3b82f6;
-  outline: none;
+.title p{
+    font-size:13px;
+    color:#6b7280;
 }
 
-/* BUTTON */
-.btn {
-  background: #3b82f6;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
+/* ================= BUTTON ================= */
+.btn{
+    padding:8px 14px;
+    border:none;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-block;
 }
 
-.btn:hover {
-  background: #2563eb;
+.btn-dark{background:#111827;color:#fff;}
+.btn-primary{background:#2563eb;color:#fff;}
+.btn:hover{opacity:.9;}
+
+/* ================= FILTER ================= */
+.filter-box{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:15px;
+    margin-bottom:15px;
 }
 
-.btn-secondary {
-  background: #6b7280;
+.filter-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
 }
 
-/* EXPORT BUTTON */
-.filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+input,select{
+    padding:8px;
+    border:1px solid #d1d5db;
+    border-radius:6px;
+    font-size:13px;
 }
 
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
+input:focus,select:focus{
+    outline:none;
+    border-color:#2563eb;
 }
 
-th {
-  background: #1f2937;
-  color: white;
-  padding: 12px;
+/* ================= SUMMARY ================= */
+.summary{
+    font-size:13px;
+    margin-bottom:10px;
+    color:#374151;
 }
 
-td {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
+/* ================= TABLE ================= */
+.table-wrap{
+    overflow-x:auto;
 }
 
-tr:hover {
-  background: #f9fafb;
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
 }
 
-/* ANGKA */
+th{
+    background:#111827;
+    color:#fff;
+    padding:10px;
+}
+
+td{
+    padding:10px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+}
+
+tr:hover{
+    background:#f3f4f6;
+}
+
+/* angka */
 td:nth-child(7),
 td:nth-child(8),
-td:nth-child(9) {
-  text-align: right;
-  font-weight: 600;
+td:nth-child(9){
+    font-weight:600;
 }
 
-/* PAGINATION */
-.pagination {
-  margin-top: 20px;
-  text-align: center;
+/* ================= PAGINATION ================= */
+.pagination{
+    margin-top:15px;
+    text-align:center;
 }
 
-.pagination a {
-  display: inline-block;
-  padding: 8px 12px;
-  margin: 2px;
-  border-radius: 6px;
-  background: #e5e7eb;
-  text-decoration: none;
-  color: black;
+.pagination a{
+    display:inline-block;
+    padding:6px 10px;
+    margin:2px;
+    border-radius:6px;
+    background:#e5e7eb;
+    text-decoration:none;
+    font-size:12px;
+    color:#111;
 }
 
-.pagination a.active {
-  background: #3b82f6;
-  color: white;
+.pagination a.active{
+    background:#2563eb;
+    color:#fff;
 }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .filter {
-    flex-direction: column;
-  }
+/* ================= RESPONSIVE ================= */
+@media(max-width:768px){
+    #main{
+        margin-left:0;
+        width:100%;
+    }
+
+    body.sidebar-close #main{
+        margin-left:0;
+    }
+
+    .wrapper{
+        padding:10px;
+    }
+
+    .topbar{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
 }
 </style>
+</head>
 
 <body>
 
-<div class="card">
-<h1>📊 Laporan Transaksi</h1>
+<div id="main">
 
-<div class="filter-row">
-  <a class="btn btn-secondary" href="export/export_pdf.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">🖨️ PDF</a>
-  <a class="btn btn-secondary" href="export/export_excel.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">📊 Excel</a>
-  <a class="btn btn-secondary" href="export/export_word.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">📝 Word</a>
+<div class="wrapper">
+<div class="card">
+
+<div class="topbar">
+    <div class="title">
+        <h1>📊 Laporan Transaksi</h1>
+        <p>Data transaksi kendaraan masuk & keluar</p>
+    </div>
+
+    <div class="export">
+    <a class="btn btn-dark" href="../export/export_pdf.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">🖨 PDF</a>
+    <a class="btn btn-dark" href="../export/export_excel.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">📊 Excel</a>
+    <a class="btn btn-dark" href="../export/export_word.php?dari=<?= urlencode($dari) ?>&sampai=<?= urlencode($sampai) ?>&search=<?= urlencode($search) ?>">📝 Word</a>
+</div>
 </div>
 
-<h2>📊 Laporan Transaksi</h2>
+<div class="filter-box">
+<div class="filter-grid">
 
-<div class="filter">
 <input type="date" id="dari" value="<?= $dari ?>">
 <input type="date" id="sampai" value="<?= $sampai ?>">
-<input type="text" id="search" placeholder="Cari..." value="<?= $search ?>">
+<input type="text" id="search" placeholder="Cari No Record / Sopir / Nopol" value="<?= $search ?>">
 
 <select id="limit">
-<option value="10" <?= $limit==10?'selected':'' ?>>10</option>
-<option value="25" <?= $limit==25?'selected':'' ?>>25</option>
-<option value="50" <?= $limit==50?'selected':'' ?>>50</option>
+<option value="10" <?= $limit==10?'selected':'' ?>>10 Data</option>
+<option value="25" <?= $limit==25?'selected':'' ?>>25 Data</option>
+<option value="50" <?= $limit==50?'selected':'' ?>>50 Data</option>
 </select>
 
-<button class="btn" onclick="filterData()">Filter</button>
+<button class="btn btn-primary" onclick="filterData()">🔍 Filter</button>
+
+</div>
 </div>
 
+<div class="summary">
+Total Data : <?= number_format($total) ?>
+</div>
+
+<div class="table-wrap">
 <table>
 <tr>
 <th>No</th>
 <th>No Record</th>
 <th>Sopir</th>
 <th>Nopol</th>
-<th>Masuk</th>
-<th>Keluar</th>
+<th>Jam Masuk</th>
+<th>Tanggal Masuk</th>
+<th>Jam Keluar</th>
+<th>Tanggal Keluar</th>
 <th>Bruto</th>
 <th>Tara</th>
 <th>Netto</th>
@@ -292,28 +345,34 @@ td:nth-child(9) {
 
 <?php if(empty($data)): ?>
 <tr>
-<td colspan="9" style="text-align:center;">Data tidak ditemukan</td>
+<td colspan="11">Tidak ada data</td>
 </tr>
 <?php else: ?>
-<?php $no=1; foreach($data as $d): ?>
+
+<?php $no = $offset + 1; foreach($data as $d): ?>
 <tr>
 <td><?= $no++ ?></td>
 <td><?= $d['no_record'] ?></td>
 <td><?= $d['Sopir'] ?></td>
 <td><?= $d['Nopol'] ?></td>
-<td><?= $d['tanggal_in'] ?></td>
-<td><?= $d['tanggal_out'] ?></td>
+<td><?= $d['jam_in'] ?: '-' ?></td>
+<td><?= $d['tgl_in'] ?: '-' ?></td>
+
+<td><?= $d['jam_out'] ?: '-' ?></td>
+<td><?= $d['tgl_out'] ?: '-' ?></td>
 <td><?= number_format($d['bruto']) ?></td>
 <td><?= number_format($d['tara']) ?></td>
 <td><?= number_format($d['netto']) ?></td>
 </tr>
 <?php endforeach; ?>
+
 <?php endif; ?>
 </table>
+</div>
 
 <div class="pagination">
 <?php for($i=1;$i<=$totalPages;$i++): ?>
-<a href="?page=<?= $i ?>&dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>&limit=<?= $limit ?>" class="<?= $i==$page?'active':'' ?>">
+<a href="?page=<?= $i ?>&dari=<?= $dari ?>&sampai=<?= $sampai ?>&search=<?= $search ?>&limit=<?= $limit ?>" class="<?= $page==$i?'active':'' ?>">
 <?= $i ?>
 </a>
 <?php endfor; ?>
@@ -322,15 +381,33 @@ td:nth-child(9) {
 </div>
 </div>
 
+</div>
+
 <script>
 function filterData(){
-  const dari = document.getElementById('dari').value;
-  const sampai = document.getElementById('sampai').value;
-  const search = document.getElementById('search').value;
-  const limit = document.getElementById('limit').value;
+    let dari = document.getElementById("dari").value;
+    let sampai = document.getElementById("sampai").value;
+    let search = document.getElementById("search").value;
+    let limit = document.getElementById("limit").value;
 
-  window.location = `?dari=${dari}&sampai=${sampai}&search=${search}&limit=${limit}`;
+    window.location =
+    `?dari=${dari}&sampai=${sampai}&search=${search}&limit=${limit}`;
 }
+
+
+
+/* AUTO IKUT SIDEBAR */
+document.addEventListener("DOMContentLoaded", function(){
+
+    const btn = document.querySelector(".hamburger-btn,.menu-toggle,#toggleSidebar");
+
+    if(btn){
+        btn.addEventListener("click", function(){
+            document.body.classList.toggle("sidebar-close");
+        });
+    }
+
+});
 </script>
 
 </body>

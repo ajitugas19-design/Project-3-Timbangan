@@ -108,7 +108,7 @@ input { width:100%; padding:12px; margin-bottom:15px; }
 
 <body>
 
-<button class="btn" onclick="openAdd()">🚗 + Tambah Kendaraan</button>
+<button class="btn" onclick="openAdd()"> + Tambah Kendaraan</button>
 
 <div class="table-container">
 <table>
@@ -129,10 +129,10 @@ input { width:100%; padding:12px; margin-bottom:15px; }
 <td><?= htmlspecialchars($d['Sopir']) ?></td>
 <td>
 <button class="edit"
-onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>✏️</button>
+onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'> EDIT </button>
 
 <button class="hapus"
-onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>)">🗑️</button>
+onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>)">HAPUS</button>
 </td>
 </tr>
 <?php endforeach; ?>

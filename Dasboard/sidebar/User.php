@@ -2,97 +2,124 @@
 session_start();
 require_once '../../config.php';
 
-header('Content-Type: text/html; charset=utf-8');
-
-// AUTH CHECK - AJAX FRIENDLY
 if (!isset($_SESSION['user_id'])) {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        header('Content-Type: application/json');
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => '⚠️ Session expired. Silakan login ulang.']);
-        exit;
-    } else {
-        echo '<div style="color:red;text-align:center;padding:50px;font-size:18px;">⚠️ Silakan login terlebih dahulu!</div>';
-        exit;
-    }
+    echo '<div style="color:red;text-align:center;padding:50px;">⚠️ Silakan login</div>';
+    exit;
 }
 
-$current_user_id = $_SESSION['user_id'];
+ob_start();
 
-// ================= HANDLE AJAX POST =================
+// ================= UPLOAD FOTO =================
+function uploadFoto($file) {
+    if (!isset($file) || $file['name'] == '') return null;
+
+    $folder = "../../uploads/";
+    if (!is_dir($folder)) mkdir($folder, 0777, true);
+
+    $namaFile = time().'_'.basename($file['name']);
+    $path = $folder.$namaFile;
+
+    if (move_uploaded_file($file['tmp_name'], $path)) {
+        return "uploads/".$namaFile;
+    }
+    return null;
+}
+
+// ================= HANDLE POST =================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-    
-    try {
-        $action = $_POST['action'] ?? '';
-        $response = ['success' => true];
 
-        if ($action === 'add') {
-            $nama = trim($_POST['nama']);
-            $sebagai = trim($_POST['sebagai']);
-            $username = trim($_POST['username']);
-            $password = $_POST['password'];
-            $foto = trim($_POST['foto']);
-            $keterangan = trim($_POST['keterangan']);
+    ob_clean();
 
-            if (empty($nama) || empty($username) || empty($password)) {
-                throw new Exception('Nama, username, dan password wajib diisi');
-            }
+    $action = $_POST['action'] ?? '';
 
-            // Check duplicate
-            $check = $pdo->prepare('SELECT id_user FROM user WHERE `user` = ? OR nama = ?');
-            $check->execute([$username, $nama]);
-            if ($check->rowCount() > 0) {
-                throw new Exception('Username atau nama sudah ada');
-            }
+    // ===== ADD =====
+    if ($action == 'add') {
 
-            // Use md5 to match Navbar.php login
-            $stmt = $pdo->prepare("INSERT INTO user (nama, sebagai, `user`, password, foto, keterangan) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$nama, $sebagai, $username, md5($password), $foto, $keterangan]);
-            $response['message'] = '✅ User baru berhasil ditambahkan!';
+        $nama = $_POST['nama'] ?? '';
+        $password = $_POST['password'] ?? '';
 
-        } elseif ($action === 'edit') {
-            $id = (int)$_POST['id'];
-            if (!$id || $id === $current_user_id) {
-                throw new Exception('ID tidak valid atau tidak bisa edit diri sendiri');
-            }
-
-            $nama = trim($_POST['nama']);
-            $sebagai = trim($_POST['sebagai']);
-            $username = trim($_POST['username']);
-            $password = trim($_POST['password']);
-            $foto = trim($_POST['foto']);
-            $keterangan = trim($_POST['keterangan']);
-
-            if (empty($nama) || empty($username)) {
-                throw new Exception('Nama dan username wajib diisi');
-            }
-
-            if (!empty($password)) {
-                $stmt = $pdo->prepare("UPDATE user SET nama=?, sebagai=?, `user`=?, password=?, foto=?, keterangan=? WHERE id_user=?");
-                $stmt->execute([$nama, $sebagai, $username, md5($password), $foto, $keterangan, $id]);
-            } else {
-                $stmt = $pdo->prepare("UPDATE user SET nama=?, sebagai=?, `user`=?, foto=?, keterangan=? WHERE id_user=?");
-                $stmt->execute([$nama, $sebagai, $username, $foto, $keterangan, $id]);
-            }
-            $response['message'] = '✅ User berhasil diupdate!';
-
-        } elseif ($action === 'delete') {
-            $id = (int)$_POST['id'];
-            if (!$id || $id === $current_user_id || $id === 1) {
-                throw new Exception('Tidak bisa hapus admin atau diri sendiri');
-            }
-            $stmt = $pdo->prepare("DELETE FROM user WHERE id_user=?");
-            $stmt->execute([$id]);
-            $response['message'] = '✅ User berhasil dihapus!';
+        if (empty($nama) || empty($password)) {
+            echo "Nama dan Password wajib diisi";
+            exit;
         }
 
-        echo json_encode($response);
-        exit;
+        $stmt = $pdo->prepare("INSERT INTO user (nama, user, password, sebagai, foto, keterangan) VALUES (?, ?, ?, ?, ?, ?)");
 
-    } catch (Exception $e) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => '❌ ' . $e->getMessage()]);
+        $stmt->execute([
+            $nama,
+            $_POST['username'] ?: null,
+            password_hash($password, PASSWORD_DEFAULT),
+            $_POST['sebagai'] ?: null,
+            uploadFoto($_FILES['foto']) ?: null,
+            $_POST['keterangan'] ?: null
+        ]);
+
+        echo "success";
+        exit;
+    }
+
+    // ===== EDIT =====
+    if ($action == 'edit') {
+
+        $id = $_POST['id'];
+        $nama = $_POST['nama'] ?? '';
+
+        if (empty($nama)) {
+            echo "Nama wajib diisi";
+            exit;
+        }
+
+        $query = "UPDATE user SET nama=?";
+        $params = [$nama];
+
+        if (!empty($_POST['username'])) {
+            $query .= ", user=?";
+            $params[] = $_POST['username'];
+        }
+
+        if (!empty($_POST['sebagai'])) {
+            $query .= ", sebagai=?";
+            $params[] = $_POST['sebagai'];
+        }
+
+        if (!empty($_POST['password'])) {
+            $query .= ", password=?";
+            $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        }
+
+        $foto = uploadFoto($_FILES['foto']);
+        if ($foto) {
+            $query .= ", foto=?";
+            $params[] = $foto;
+        }
+
+        if (!empty($_POST['keterangan'])) {
+            $query .= ", keterangan=?";
+            $params[] = $_POST['keterangan'];
+        }
+
+        $query .= " WHERE id_user=?";
+        $params[] = $id;
+
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+
+        echo "success";
+        exit;
+    }
+
+    // ===== DELETE =====
+    if ($action == 'delete') {
+        $id = $_POST['id'];
+
+        if ($id == 1) {
+            echo "Admin tidak bisa dihapus";
+            exit;
+        }
+
+        $pdo->prepare("DELETE FROM user WHERE id_user=?")->execute([$id]);
+
+        echo "success";
         exit;
     }
 }
@@ -101,280 +128,147 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $users = $pdo->query("SELECT * FROM user ORDER BY nama")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-/* Empty - use dashboard CSS */
-.container{max-width:1100px;margin:auto;background:white;padding:30px;border-radius:12px;box-shadow:0 5px 20px rgba(0,0,0,0.1);}
-h2{text-align:center;color:#1f2937;margin-bottom:25px;}
-.btn{background:#10b981;color:white;padding:12px 24px;border:none;border-radius:10px;cursor:pointer;font-size:16px;transition:0.2s;}
-.btn:hover{background:#059669;}
-table{width:100%;border-collapse:collapse;margin-top:20px;}
-th{background:#111827;color:white;padding:15px;text-align:left;font-weight:600;}
-td{padding:15px;border-bottom:1px solid #e5e7eb;}
-.user-info{display:flex;align-items:center;gap:12px;}
-.user-info img{width:50px;height:50px;border-radius:50%;object-fit:cover;border:3px solid #10b981;}
-.status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:bold;display:inline-block;}
-.online{background:#d1fae5;color:#065f46;}
-.offline{background:#fee2e2;color:#991b1b;}
-.edit-btn{background:#f59e0b;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px;}
-.delete-btn{background:#ef4444;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;}
-.form-slide{position:fixed;right:-400px;top:0;width:380px;height:100%;background:white;padding:25px;transition:.3s;z-index:1002;box-shadow:-10px 0 30px rgba(0,0,0,0.3);overflow-y:auto;}
-.form-slide.active{right:0;}
-.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;z-index:1001;cursor:pointer;}
-.overlay.active{display:block;}
-.user-overlay{}
-input,textarea,select{width:100%;padding:12px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;font-size:14px;}
-input:focus,textarea:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
-.message{position:fixed;top:20px;right:20px;padding:15px 20px;border-radius:10px;color:white;font-weight:500;z-index:1003;max-width:350px;transform:translateX(400px);transition:.3s;}
-.message.success{background:#10b981;}
-.message.error{background:#ef4444;}
-.alert{display:flex;align-items:center;gap:10px;padding:12px;border-radius:8px;margin:10px 0;}
-.alert-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;}
-</style>
-</head>
-<body>
-
 <div class="container">
-<h2>👥 Manajemen User</h2>
-<button class="btn add-user-btn">➕ Tambah User</button>
+<h2>Manajemen User</h2>
+<button class="btn" onclick="openForm()">+ Tambah</button>
 
 <table>
 <tr>
-<th>Nama</th><th>Role</th><th>Username</th><th>Status</th><th>Info</th><th>Aksi</th>
+<th>Foto</th>
+<th>Nama</th>
+<th>Username</th>
+<th>Aksi</th>
 </tr>
+
 <?php foreach($users as $u): ?>
 <tr>
 <td>
-<div class="user-info">
-<img src="<?= htmlspecialchars($u['foto'] ?: 'https://ui-avatars.com/api/?name='.urlencode($u['nama']).'&size=50&background=10b981&color=fff') ?>" alt="">
-<div><b><?= htmlspecialchars($u['nama']) ?></b><br><small><?= htmlspecialchars($u['keterangan']) ?></small></div>
-</div>
+<img src="../<?= $u['foto'] ?: 'uploads/default.png' ?>">
 </td>
-<td><?= htmlspecialchars($u['sebagai']) ?></td>
-<td><code><?= htmlspecialchars($u['user']) ?></code></td>
-<td><?= $u['id_user'] == $current_user_id ? '<span class="status online">🟢 Online</span>' : '<span class="status offline">🔴 Offline</span>' ?></td>
-<td><?= $u['id_user'] == $current_user_id ? 'Anda' : 'User lain' ?></td>
+<td><?= htmlspecialchars($u['nama']) ?></td>
+<td><?= htmlspecialchars($u['user']) ?></td>
 <td>
-<button class="edit-btn" data-user='<?= json_encode($u) ?>'>Edit</button>
-<button class="delete-btn" data-id="<?= $u['id_user'] ?>">Hapus</button>
+<button class="edit" onclick='editUser(<?= json_encode($u) ?>)'>Edit</button>
+<button class="hapus" onclick="hapus(<?= $u['id_user'] ?>)">Hapus</button>
 </td>
 </tr>
 <?php endforeach; ?>
+
 </table>
 </div>
 
-<!-- MODAL FORM -->
-<div class="overlay" id="overlay"></div>
-<div class="form-slide" id="formSlide">
-<h3 id="formTitle">Tambah User Baru</h3>
-<form id="userForm">
-<input type="hidden" name="action" id="actionType">
-<input type="hidden" name="id" id="editId">
+<!-- FORM -->
+<div class="overlay" id="overlay" onclick="closeForm()"></div>
 
-<div class="input-group">
-<label>Nama Lengkap *</label>
-<input name="nama" id="nama" required>
-</div>
+<div class="formBox" id="formBox">
+<form id="formUser" enctype="multipart/form-data">
 
-<div class="input-group">
-<label>Role / Jabatan</label>
-<input name="sebagai" id="sebagai">
-</div>
+<input type="hidden" name="id" id="id">
+<input type="hidden" name="action" id="action">
 
-<div class="input-group">
-<label>Username *</label>
-<input name="username" id="username" required>
-</div>
+<input name="nama" placeholder="Nama *" required>
+<input name="username" placeholder="Username">
+<input type="password" name="password" id="password" placeholder="Password *">
+<input name="sebagai" placeholder="Role">
+<input type="file" name="foto">
+<textarea name="keterangan" placeholder="Keterangan"></textarea>
 
-<div class="input-group">
-<label>Password <small>(kosongkan untuk edit tanpa ganti password)</small></label>
-<input type="password" name="password" id="password">
-</div>
+<button class="btn">Simpan</button>
+<button type="button" onclick="closeForm()">Batal</button>
 
-<div class="input-group">
-<label>URL Foto Profil</label>
-<input name="foto" id="foto" placeholder="https://example.com/photo.jpg">
-</div>
-
-<div class="input-group">
-<label>Keterangan</label>
-<textarea name="keterangan" id="keterangan" rows="3" placeholder="Deskripsi tambahan..."></textarea>
-</div>
-
-<button type="submit" class="btn" style="background:#10b981;">💾 Simpan</button>
-<button type="button" class="btn close-form-btn" style="background:#6b7280;">❌ Batal</button>
 </form>
 </div>
 
-<script>
-// USER MANAGEMENT - Event Delegation (Fix dynamic load)
-// Init saat DOM ready atau setelah content injected
-function initUserManagement() {
-    const content = document.getElementById('content') || document.body;
-    
-    // Form submit (tetap sama, tapi wrap window)
-    const userForm = document.getElementById('userForm');
-    if (userForm && !userForm.dataset.init) {
-        userForm.dataset.init = 'true';
-        userForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '⏳ Menyimpan...';
-            submitBtn.disabled = true;
+<style>
+body{font-family:Segoe UI;background:#f1f5f9;}
+.container{max-width:1100px;margin:auto;background:white;padding:25px;border-radius:12px;}
+.btn{background:#10b981;color:white;padding:10px;border:none;border-radius:8px;cursor:pointer;}
+.edit{background:#f59e0b;}
+.hapus{background:#ef4444;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th{background:#1f2937;color:white;padding:12px;}
+td{padding:12px;border-bottom:1px solid #eee;}
+img{width:50px;height:50px;border-radius:50%;object-fit:cover;}
 
-            try {
-                const response = await fetch(window.USER_PATH || 'sidebar/User.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    window.showUserMessage(result.message || 'Berhasil!', 'success');
-                    window.closeUserForm();
-                    window.loadUserContent(); // Reload via global
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                window.showUserMessage(error.message || 'Error', 'error');
-                console.error('User form error:', error);
-            } finally {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+.formBox{position:fixed;right:-400px;top:0;width:350px;height:100%;background:white;padding:20px;transition:.3s;z-index:1500;}
+.formBox.active{right:0;}
+
+.overlay{
+    position:fixed;
+    left:250px;
+    width:calc(100% - 250px);
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    z-index:1000;
+}
+.overlay.active{display:block;}
+
+.sidebar{z-index:2000;position:fixed;}
+</style>
+
+<script>
+function openForm(){
+    formUser.reset();
+    action.value='add';
+
+    password.required = true;
+
+    formBox.classList.add('active');
+    overlay.classList.add('active');
+}
+
+function closeForm(){
+    formBox.classList.remove('active');
+    overlay.classList.remove('active');
+}
+
+function editUser(data){
+    openForm();
+
+    action.value='edit';
+    id.value=data.id_user;
+
+    formUser.nama.value=data.nama;
+    formUser.username.value=data.user || '';
+    formUser.sebagai.value=data.sebagai || '';
+    formUser.keterangan.value=data.keterangan || '';
+
+    password.required = false;
+}
+
+function hapus(id){
+    if(confirm('Hapus data?')){
+        let fd = new FormData();
+        fd.append('action','delete');
+        fd.append('id',id);
+
+        fetch('',{method:'POST',body:fd})
+        .then(r=>r.text())
+        .then(res=>{
+            if(res.trim()=='success'){
+                loadContent('sidebar/User.php','User');
+            }else{
+                alert(res);
             }
         });
     }
-    
-    // Event delegation untuk semua buttons
-    content.removeEventListener('click', userClickHandler); // Prevent duplicate
-    content.addEventListener('click', userClickHandler);
-    
-    // Force init for Tambah button if standalone
-    document.querySelector('.add-user-btn')?.addEventListener('click', function(e) {
-        console.log('FORCE Tambah click');
-        window.openUserForm('add');
+}
+
+formUser.onsubmit = function(e){
+    e.preventDefault();
+
+    let fd = new FormData(this);
+
+    fetch('',{method:'POST',body:fd})
+    .then(r=>r.text())
+    .then(res=>{
+        if(res.trim()=='success'){
+            closeForm();
+            loadContent('sidebar/User.php','User');
+        }else{
+            alert(res);
+        }
     });
 }
-
-let userClickHandler = function(e) {
-    const target = e.target.closest('button');
-    if (!target) return;
-    
-    console.log('Button clicked:', target.className, target.dataset);
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (target.classList.contains('add-user-btn')) {
-        console.log('Open add form');
-        window.openUserForm('add');
-    } else if (target.classList.contains('edit-btn')) {
-        try {
-            const data = JSON.parse(target.dataset.user);
-            console.log('Edit data:', data);
-            window.openUserForm('edit', data);
-        } catch(err) { console.error('Parse error:', err); }
-    } else if (target.classList.contains('delete-btn')) {
-        const id = parseInt(target.dataset.id);
-        console.log('Delete ID:', id);
-        window.deleteUserUser(id);
-    } else if (target.classList.contains('close-form-btn') || target.closest('.overlay')) {
-        console.log('Close form');
-        window.closeUserForm();
-    }
-};
-
-// Global functions (persist across loads)
-window.openUserForm = function(mode = 'add', userData = null) {
-    const form = document.getElementById('userForm');
-    const slide = document.getElementById('formSlide');
-    const overlay = document.getElementById('overlay');
-    
-    if (!form || !slide) {
-        console.error('User form elements not found');
-        return;
-    }
-    
-    form.reset();
-    document.getElementById('actionType').value = mode;
-    
-    if (mode === 'edit' && userData) {
-        document.getElementById('formTitle').textContent = 'Edit User: ' + (userData.nama || '');
-        document.getElementById('editId').value = userData.id_user;
-        document.getElementById('nama').value = userData.nama || '';
-        document.getElementById('sebagai').value = userData.sebagai || '';
-        document.getElementById('username').value = userData.user || '';
-        document.getElementById('foto').value = userData.foto || '';
-        document.getElementById('keterangan').value = userData.keterangan || '';
-        document.getElementById('password').placeholder = 'Kosongkan untuk tidak ubah';
-    } else {
-        document.getElementById('formTitle').textContent = 'Tambah User Baru';
-        document.getElementById('password').placeholder = 'Password minimal 6 karakter';
-    }
-    
-    slide.classList.add('active');
-    overlay.classList.add('active');
-    overlay.classList.add('user-overlay');
-};
-
-window.closeUserForm = function() {
-    const slide = document.getElementById('formSlide');
-    const overlay = document.getElementById('overlay');
-    if (slide) slide.classList.remove('active');
-    if (overlay) overlay.classList.remove('active', 'user-overlay');
-};
-
-window.deleteUserUser = function(id) {
-    if (!id || confirm('Yakin hapus user ID ' + id + '?')) {
-        const formData = new FormData();
-        formData.append('action', 'delete');
-        formData.append('id', id);
-        
-        fetch(window.USER_PATH || 'sidebar/User.php', {method: 'POST', body: formData})
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    window.showUserMessage(result.message, 'success');
-                    window.loadUserContent();
-                } else {
-                    window.showUserMessage(result.message, 'error');
-                }
-            })
-            .catch(err => {
-                console.error('Delete error:', err);
-                window.showUserMessage('Error: ' + err, 'error');
-            });
-    }
-};
-
-window.showUserMessage = function(text, type) {
-    const msg = document.createElement('div');
-    msg.className = `message ${type}`;
-    msg.textContent = text;
-    document.body.appendChild(msg);
-    setTimeout(() => msg.style.transform = 'translateX(0)', 100);
-    setTimeout(() => msg.remove(), 4000);
-};
-
-document.querySelector('.close-form-btn')?.addEventListener('click', window.closeUserForm);
-
-// Auto-init saat load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUserManagement);
-} else {
-    initUserManagement();
-}
-
-// Global loader helper (fix parent issue)
-window.loadUserContent = function() { console.log('Reload user'); if (window.loadContent) window.loadContent('sidebar/User.php','User'); else location.reload(); };
-window.USER_PATH = window.location.pathname.includes('sidebar') ? 'User.php' : 'sidebar/User.php';
-console.log('User.php loaded, path:', window.USER_PATH);
 </script>
-
-</body>
-</html>
-

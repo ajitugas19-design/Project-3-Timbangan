@@ -124,10 +124,10 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <td><?= htmlspecialchars($d['Material']) ?></td>
 <td>
 <button class="edit"
-onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>✏️</button>
+onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'> EDIT </button>
 
 <button class="hapus"
-onclick="hapus(<?= (int)$d['id_Material'] ?>)">🗑️</button>
+onclick="hapus(<?= (int)$d['id_Material'] ?>)"> HAPUS </button>
 </td>
 </tr>
 <?php endforeach; ?>

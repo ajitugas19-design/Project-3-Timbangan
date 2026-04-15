@@ -129,12 +129,12 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 
 <button class="edit"
 onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
-✏️
+EDIT
 </button>
 
 <button class="hapus"
 onclick="hapus(<?= isset($d['id_Supplier']) ? (int)$d['id_Supplier'] : 0 ?>)">
-🗑️
+HAPUS
 </button>
 
 </td>

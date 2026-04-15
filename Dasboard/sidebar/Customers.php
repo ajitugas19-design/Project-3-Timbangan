@@ -117,8 +117,8 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <td><?= htmlspecialchars($d['Customers']) ?></td>
 <td><?= htmlspecialchars($d['Keterangan']) ?></td>
 <td>
-<button class="edit" onclick='openEdit(<?= json_encode($d) ?>)'>✏️</button>
-<button class="hapus" onclick="hapus(<?= $d['id_Customers'] ?>)">🗑️</button>
+<button class="edit" onclick='openEdit(<?= json_encode($d) ?>)'>EDIT</button>
+<button class="hapus" onclick="hapus(<?= $d['id_Customers'] ?>)">HAPUS</button>
 </td>
 </tr>
 <?php endforeach; ?>
