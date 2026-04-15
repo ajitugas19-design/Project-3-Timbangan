@@ -1,52 +1,80 @@
-﻿<?php 
+﻿<?php
 session_start();
 require_once '../../config.php';
 
 if (!isset($_SESSION['user_id'])) {
-    echo '<div style="color:red;text-align:center;margin:50px;">⚠️ Login dulu!</div>';
+    echo '<div style="padding:40px;text-align:center;color:red;">⚠️ Login dulu!</div>';
     exit;
 }
 
-// ================= LOAD DATA =================
-$tgl = $_GET['tgl'] ?? '';
+/* ===========================
+   HAPUS DATA
+=========================== */
+if (isset($_GET['hapus'])) {
+    $id = (int)$_GET['hapus'];
+
+    $stmt = $pdo->prepare("DELETE FROM transaksi WHERE id_transaksi=?");
+    $stmt->execute([$id]);
+
+    header("Location: Transaksi.php?msg=hapus");
+    exit;
+}
+
+/* ===========================
+   FILTER
+=========================== */
+$tgl    = $_GET['tgl'] ?? '';
 $search = $_GET['search'] ?? '';
 
-$where = "WHERE 1=1";
+$where  = " WHERE 1=1 ";
 $params = [];
 
-if ($tgl) {
-    $where .= " AND DATE(wi.tanggal_in)=?";
+if ($tgl != '') {
+    $where .= " AND DATE(wi.tanggal_in)=? ";
     $params[] = $tgl;
 }
 
-if ($search) {
+if ($search != '') {
     $where .= " AND (
-        t.no_record LIKE ? OR 
-        k.Sopir LIKE ? OR 
+        t.no_record LIKE ? OR
+        k.Sopir LIKE ? OR
         k.Nopol LIKE ? OR
         s.Nama_Supplier LIKE ? OR
         m.Material LIKE ? OR
         c.Customers LIKE ?
     )";
-    for ($i=0;$i<6;$i++) $params[]="%$search%";
+
+    for ($i=0;$i<6;$i++) {
+        $params[] = "%$search%";
+    }
 }
 
+/* ===========================
+   LOAD DATA
+=========================== */
 $stmt = $pdo->prepare("
-SELECT 
-t.id_transaksi,t.no_record,
-k.Sopir,k.Nopol,
+SELECT
+t.id_transaksi,
+t.no_record,
+k.Sopir,
+k.Nopol,
 s.Nama_Supplier,
 m.Material,
 c.Customers,
-wi.tanggal_in,wo.tanggal_out,
-t.bruto,t.tara,t.netto
+wi.tanggal_in,
+wo.tanggal_out,
+t.bruto,
+t.tara,
+t.netto
+
 FROM transaksi t
-LEFT JOIN waktu_in wi ON t.id_in=wi.id_in
-LEFT JOIN waktu_out wo ON t.id_out=wo.id_out
-LEFT JOIN kendaraan k ON t.id_kendaraan=k.id_Kendaraan
-LEFT JOIN supplier s ON t.id_supplier=s.id_Supplier
-LEFT JOIN material m ON t.id_material=m.id_Material
-LEFT JOIN customers c ON t.id_customers=c.id_Customers
+LEFT JOIN waktu_in wi ON t.id_in = wi.id_in
+LEFT JOIN waktu_out wo ON t.id_out = wo.id_out
+LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+LEFT JOIN supplier s ON t.id_supplier = s.id_Supplier
+LEFT JOIN material m ON t.id_material = m.id_Material
+LEFT JOIN customers c ON t.id_customers = c.id_Customers
+
 $where
 ORDER BY t.id_transaksi DESC
 ");
@@ -55,135 +83,191 @@ $stmt->execute($params);
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<style>
-body{
-  font-family:Segoe UI;
-  background:#f1f5f9;
-  margin:0;
-}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data Transaksi</title>
 
-/* 🔥 FIX LAYOUT */
-.container{
-  width:100%;
-  padding:20px;
+<style>
+
+/* CARD */
+.card{
+    background:#fff;
+    border-radius:4px;
+    padding:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
 }
 
 /* HEADER */
 .header{
-  background:#1f2937;
-  color:white;
-  padding:15px;
-  border-radius:10px;
-  font-weight:bold;
+    margin-bottom:18px;
+}
+
+.header h1{
+    font-size:28px;
+    color:#111827;
+}
+
+.header p{
+    color:#6b7280;
+    margin-top:5px;
 }
 
 /* FILTER */
 .controls{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
+    display:grid;
+    grid-template-columns:180px 1fr 130px;
+    gap:10px;
+    margin-bottom:18px;
 }
 
-input,button{
-  padding:8px;
-  border-radius:6px;
-  border:1px solid #ccc;
+.controls input,
+.controls button{
+    padding:11px;
+    border-radius:10px;
+    border:1px solid #d1d5db;
 }
 
-.btn{
-  background:#3b82f6;
-  color:white;
-  border:none;
-  cursor:pointer;
+.controls button{
+    background:#2563eb;
+    color:#fff;
+    border:none;
+    font-weight:700;
+    cursor:pointer;
 }
 
 /* TABLE */
-.table-container{
-  margin-top:15px;
-  background:white;
-  border-radius:10px;
-  overflow:hidden;
+.table-wrap{
+    overflow-x:auto;
 }
 
 table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th, td{
-  padding:10px;
-  border-bottom:1px solid #eee;
-  text-align:center;
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
 }
 
 th{
-  background:#1f2937;
-  color:white;
+    background:#111827;
+    color:#fff;
+    padding:10px;
 }
 
-/* BUTTON */
+td{
+    padding:10px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+}
+
+tr:hover{
+    background:#eef4ff;
+}
+
+/* ACTION */
+.action{
+    display:flex;
+    gap:6px;
+    justify-content:center;
+}
+
+.btn{
+    padding:8px 12px;
+    border-radius:8px;
+    text-decoration:none;
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    display:inline-block;
+}
+
 .btn-edit{
-  background:#f59e0b;
-  color:white;
-  padding:5px 8px;
-  border-radius:5px;
-  text-decoration:none;
+    background:#f59e0b;
 }
 
-.btn-danger{
-  background:#ef4444;
-  color:white;
-  border:none;
-  padding:5px 8px;
-  border-radius:5px;
-  cursor:pointer;
+.btn-delete{
+    background:#ef4444;
 }
 
 .netto{
-  color:#10b981;
-  font-weight:bold;
+    color:#10b981;
+    font-weight:700;
 }
 
-/* MESSAGE */
-.message{
-  position:fixed;
-  top:20px;
-  right:20px;
-  padding:10px;
-  border-radius:8px;
-  color:white;
+.alert{
+    background:#dcfce7;
+    color:#166534;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:15px;
 }
-.success{background:#10b981;}
-.error{background:#ef4444;}
+
+@media(max-width:768px){
+    .controls{
+        grid-template-columns:1fr;
+    }
+
+    body{
+        padding:12px;
+    }
+}
 </style>
+</head>
 
-<div class="container">
+<body>
 
-<div class="header">📊 Data Transaksi</div>
+<div class="card">
+
+<div class="header">
+<h1>📊 Data Transaksi</h1>
+<p>Kelola data transaksi kendaraan masuk & keluar</p>
+</div>
+
+<?php if(isset($_GET['msg']) && $_GET['msg']=='hapus'): ?>
+<div class="alert">✅ Data berhasil dihapus</div>
+<?php endif; ?>
 
 <!-- FILTER -->
 <form method="GET" class="controls">
 <input type="date" name="tgl" value="<?= $tgl ?>">
-<input type="text" name="search" placeholder="Cari..." value="<?= $search ?>">
-<button class="btn">Cari</button>
+
+<input type="text" name="search"
+placeholder="Cari No Record / Sopir / Nopol..."
+value="<?= htmlspecialchars($search) ?>">
+
+<button type="submit">🔍 Cari</button>
 </form>
 
 <!-- TABLE -->
-<div class="table-container">
+<div class="table-wrap">
 <table>
-<thead>
-<tr>
-<th>ID</th><th>No</th><th>Sopir</th><th>Nopol</th>
-<th>Supplier</th><th>Material</th><th>Customer</th>
-<th>Masuk</th><th>Keluar</th>
-<th>Bruto</th><th>Tara</th><th>Netto</th><th>Aksi</th>
-</tr>
-</thead>
 
-<tbody id="tbody">
+<tr>
+<th>ID</th>
+<th>No Record</th>
+<th>Sopir</th>
+<th>Nopol</th>
+<th>Supplier</th>
+<th>Material</th>
+<th>Customer</th>
+<th>Masuk</th>
+<th>Keluar</th>
+<th>Bruto</th>
+<th>Tara</th>
+<th>Netto</th>
+<th>Aksi</th>
+</tr>
+
+<?php if(!$data): ?>
+<tr>
+<td colspan="13">Data tidak ditemukan</td>
+</tr>
+<?php endif; ?>
+
 <?php foreach($data as $d): ?>
 <tr>
+
 <td><?= $d['id_transaksi'] ?></td>
 <td><?= $d['no_record'] ?></td>
 <td><?= $d['Sopir'] ?></td>
@@ -191,68 +275,37 @@ th{
 <td><?= $d['Nama_Supplier'] ?></td>
 <td><?= $d['Material'] ?></td>
 <td><?= $d['Customers'] ?></td>
-
 <td><?= $d['tanggal_in'] ?></td>
 <td><?= $d['tanggal_out'] ?></td>
-
 <td><?= number_format($d['bruto']) ?></td>
 <td><?= number_format($d['tara']) ?></td>
 <td class="netto"><?= number_format($d['netto']/1000,2) ?> Ton</td>
 
 <td>
-<a href="edit.php?id=<?= $d['id_transaksi'] ?>" class="btn-edit">✏️</a>
-<button class="btn-danger" onclick="hapus(<?= $d['id_transaksi'] ?>)">🗑️</button>
+<div class="action">
+
+<!-- TOMBOL EDIT FIX -->
+<a href="edit.php?id=<?= $d['id_transaksi'] ?>" class="btn btn-edit">
+✏ Edit
+</a>
+
+<!-- TOMBOL HAPUS FIX -->
+<a href="Transaksi.php?hapus=<?= $d['id_transaksi'] ?>"
+class="btn btn-delete"
+onclick="return confirm('Yakin hapus data ini?')">
+🗑 Hapus
+</a>
+
+</div>
 </td>
 
 </tr>
 <?php endforeach; ?>
-</tbody>
+
 </table>
 </div>
 
 </div>
 
-<script>
-const BASE_URL = 'sidebar/Transaksi.php';
-
-// DELETE AJAX
-function hapus(id){
-    if(!confirm('Hapus data?')) return;
-
-    let fd = new FormData();
-    fd.append('action','delete');
-    fd.append('id',id);
-
-    fetch(BASE_URL,{
-        method:'POST',
-        body:fd
-    })
-    .then(r=>r.json())
-    .then(res=>{
-        show(res.message,res.success);
-        if(res.success) loadTable();
-    });
-}
-
-// RELOAD TABLE
-function loadTable(){
-    fetch(BASE_URL)
-    .then(r=>r.text())
-    .then(html=>{
-        const doc = new DOMParser().parseFromString(html,'text/html');
-        const newTbody = doc.getElementById('tbody');
-        if(newTbody){
-            document.getElementById('tbody').innerHTML = newTbody.innerHTML;
-        }
-    });
-}
-
-// MESSAGE
-function show(msg, ok=true){
-    let d=document.createElement('div');
-    d.className='message '+(ok?'success':'error');
-    d.innerText=msg;
-    document.body.appendChild(d);
-    setTimeout(()=>d.remove(),3000);
-}
-</script>
+</body>
+</html>

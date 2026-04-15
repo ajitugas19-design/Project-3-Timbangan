@@ -119,7 +119,6 @@ $totalPages = ceil($total / $limit);
 }
 
 
-
 body.sidebar-close #main{
     margin-left:80px;
     width:calc(100% - 80px);
@@ -229,7 +228,7 @@ td{
 }
 
 tr:hover{
-    background:#f3f4f6;
+    background:#eef4ff;
 }
 
 /* angka */
