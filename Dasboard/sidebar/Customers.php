@@ -67,14 +67,20 @@ $data = $pdo->query("SELECT * FROM customers ORDER BY id_Customers DESC")->fetch
 <title>Customers</title>
 
 <style>
-/* CSS KAMU TIDAK DIUBAH */
---danger: #ef4444;
---warning: #eab308;
---dark: #374151;
---light: #f3f4f6;
---shadow: 0 4px 6px rgba(0,0,0,0.1);
+/* CSS MIRROR Suppliers.php */
+:root {
+  --danger: #ef4444;
+  --warning: #eab308;
+  --dark: #374151;
+  --light: #f3f4f6;
+  --shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-body { font-family: Arial; background: linear-gradient(135deg,#f3f4f6,#e5e7eb); padding:20px; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f3f4f6;
+  margin: 0;
+  padding: 0;
+}
 .btn{ background:var(--primary,#10b981); color:white; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; }
 .table-container{ background:white; border-radius:12px; margin-top:20px; overflow:hidden; box-shadow:var(--shadow); }
 table{ width:100%; border-collapse:collapse; }
@@ -89,7 +95,7 @@ td{ padding:12px; border-bottom:1px solid #eee; }
 .form-slide{ position:fixed; right:-400px; top:0; width:350px; height:100%; background:white; padding:20px; transition:0.3s; z-index:1001; }
 .form-slide.active{ right:0; }
 
-input{ width:100%; padding:10px; margin-bottom:10px; }
+input, textarea{ width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box; }
 
 .btn-save{ background:#10b981; color:white; padding:10px; width:100%; border:none; border-radius:8px; }
 .btn-cancel{ background:#6b7280; color:white; padding:10px; width:100%; border:none; border-radius:8px; margin-top:10px; }
@@ -102,12 +108,17 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 
 <body>
 
-<button class="btn" onclick="openAdd()">+ Tambah</button>
+<button class="btn" onclick="openAdd()">+ Tambah Customer</button>
 
 <div class="table-container">
 <table>
 <thead>
-<tr><th>No</th><th>Nama</th><th>Keterangan</th><th>Opsi</th></tr>
+<tr>
+<th>No</th>
+<th>Nama Customer</th>
+<th>Keterangan</th>
+<th>Opsi</th>
+</tr>
 </thead>
 
 <tbody id="tbody">
@@ -117,8 +128,17 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <td><?= htmlspecialchars($d['Customers']) ?></td>
 <td><?= htmlspecialchars($d['Keterangan']) ?></td>
 <td>
-<button class="edit" onclick='openEdit(<?= json_encode($d) ?>)'>EDIT</button>
-<button class="hapus" onclick="hapus(<?= $d['id_Customers'] ?>)">HAPUS</button>
+
+<button class="edit"
+onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+EDIT
+</button>
+
+<button class="hapus"
+onclick="hapus(<?= isset($d['id_Customers']) ? (int)$d['id_Customers'] : 0 ?>)">
+HAPUS
+</button>
+
 </td>
 </tr>
 <?php endforeach; ?>
@@ -136,8 +156,8 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 <input type="hidden" name="action" id="action">
 <input type="hidden" name="id" id="id">
 
-<input type="text" name="nama" id="nama" placeholder="Nama" required>
-<input type="text" name="keterangan" id="ket" placeholder="Keterangan">
+<input type="text" name="nama" id="nama" placeholder="Nama Customer" required>
+<textarea name="keterangan" id="ket" placeholder="Keterangan" rows="3"></textarea>
 
 <button type="submit" class="btn-save">Simpan</button>
 <button type="button" class="btn-cancel" onclick="closeForm()">Batal</button>
@@ -145,32 +165,23 @@ input{ width:100%; padding:10px; margin-bottom:10px; }
 </div>
 
 <script>
-const slide = document.getElementById('slide');
-const overlay = document.getElementById('overlay');
-const form = document.getElementById('form');
-
-
 (function(){
 
-// ================= INIT =================
 const form = document.getElementById('form');
 const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
 const tbody = document.getElementById('tbody');
+const title = document.getElementById('title');
 
-if (!form) return;
-
-// ================= URL FIX =================
 const BASE_URL = window.location.pathname.includes('Customers.php')
   ? ''
   : 'sidebar/Customers.php';
 
-// ================= FORM CONTROL =================
+// ===== FORM =====
 function openForm(){
     slide.classList.add('active');
     overlay.classList.add('active');
 }
-
 function closeForm(){
     slide.classList.remove('active');
     overlay.classList.remove('active');
@@ -179,55 +190,55 @@ function closeForm(){
 overlay.onclick = closeForm;
 slide.onclick = e => e.stopPropagation();
 
-// ================= ADD =================
+// ===== ADD =====
 window.openAdd = function(){
     form.reset();
-    form.action.value = 'add';
-    document.getElementById('title').innerText = 'Tambah Customer';
+    document.getElementById('action').value = 'add';
+    document.getElementById('id').value = '';
+    title.innerText = 'Tambah Customer';
     openForm();
 }
 
-// ================= EDIT =================
+// ===== EDIT =====
 window.openEdit = function(d){
-    form.reset();
-    form.action.value = 'edit';
-    form.id.value = d.id_Customers;
-    form.nama.value = d.Customers;
-    form.keterangan.value = d.Keterangan || '';
-    document.getElementById('title').innerText = 'Edit Customer';
+    console.log(d); // 🔥 DEBUG
+
+    document.getElementById('action').value = 'edit';
+    document.getElementById('id').value = d.id_Customers;
+
+    document.getElementById('nama').value = d.Customers;
+    document.getElementById('ket').value = d.Keterangan || '';
+
+    title.innerText = 'Edit Customer';
     openForm();
 }
 
-// ================= DELETE =================
+// ===== DELETE =====
 window.hapus = function(id){
+    console.log("DELETE ID:", id); // 🔥 DEBUG
+
     if(!confirm('Hapus data?')) return;
 
     let fd = new FormData();
     fd.append('action','delete');
     fd.append('id',id);
 
-    fetch(BASE_URL,{
-        method:'POST',
-        body:fd
-    })
+    fetch(BASE_URL,{method:'POST',body:fd})
     .then(r=>r.json())
     .then(res=>{
+        console.log(res); // 🔥 DEBUG
         show(res.message,res.success);
         if(res.success) loadTable();
-    })
-    .catch(()=>show('❌ Gagal hapus',false));
+    });
 }
 
-// ================= SUBMIT =================
+// ===== SUBMIT =====
 form.addEventListener('submit', function(e){
     e.preventDefault();
 
     let fd = new FormData(form);
 
-    fetch(BASE_URL,{
-        method:'POST',
-        body:fd
-    })
+    fetch(BASE_URL,{method:'POST',body:fd})
     .then(r=>r.json())
     .then(res=>{
         show(res.message,res.success);
@@ -239,21 +250,18 @@ form.addEventListener('submit', function(e){
     .catch(()=>show('❌ Gagal simpan',false));
 });
 
-// ================= RELOAD TABLE (FIX PENTING) =================
+// ===== RELOAD TABLE =====
 function loadTable(){
     fetch(BASE_URL)
     .then(r=>r.text())
     .then(html=>{
         const doc = new DOMParser().parseFromString(html,'text/html');
         const newTbody = doc.getElementById('tbody');
-
-        if (newTbody) {
-            tbody.innerHTML = newTbody.innerHTML;
-        }
+        if (newTbody) tbody.innerHTML = newTbody.innerHTML;
     });
 }
 
-// ================= NOTIF =================
+// ===== MESSAGE =====
 function show(msg, ok=true){
     let d=document.createElement('div');
     d.className='message '+(ok?'success':'error');
@@ -267,3 +275,4 @@ function show(msg, ok=true){
 
 </body>
 </html>
+
