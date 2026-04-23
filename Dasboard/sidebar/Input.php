@@ -116,7 +116,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
 }
 
 // Unfinished
-$unfinished = $pdo->query("SELECT t.*, k.Nopol FROM transaksi t JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan WHERE tara = 0 OR tara IS NULL")->fetchAll();
+$unfinished = $pdo->query("
+    SELECT t.*, k.Nopol
+    FROM transaksi t
+    LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+    WHERE 
+        t.bruto IS NULL OR t.bruto = 0 OR
+        t.tara  IS NULL OR t.tara  = 0 OR
+        t.netto IS NULL OR t.netto = 0
+    ORDER BY t.id_transaksi DESC
+")->fetchAll(PDO::FETCH_ASSOC);
 
 // Auto no_record preview (same logic as POST)
 $date_prefix = date('Ymd');
@@ -134,11 +143,18 @@ $materials = $pdo->query('SELECT * FROM material ORDER BY Material ASC')->fetchA
 // Unfinished JSON endpoint
 if (isset($_GET['unfinished']) && $_GET['unfinished'] == '1') {
     header('Content-Type: application/json');
-    $unfinished = $pdo->query("SELECT t.id_transaksi, t.no_record, t.bruto, k.Nopol 
-                               FROM transaksi t 
-                               JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan 
-                               WHERE (t.tara = 0 OR t.tara IS NULL) 
-                               ORDER BY t.id_transaksi DESC")->fetchAll(PDO::FETCH_ASSOC);
+
+    $unfinished = $pdo->query("
+        SELECT t.id_transaksi, t.no_record, t.bruto, t.tara, t.netto, k.Nopol
+        FROM transaksi t
+        LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
+        WHERE 
+            t.bruto IS NULL OR t.bruto = 0 OR
+            t.tara  IS NULL OR t.tara  = 0 OR
+            t.netto IS NULL OR t.netto = 0
+        ORDER BY t.id_transaksi DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode($unfinished);
     exit;
 }
@@ -268,14 +284,19 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 
 <div>
-<label>Edit Belum Selesai</label>
-<select id="edit_select" onchange="loadEdit()" style="background-color: #fef3c7;">
-<option value="">-- Pilih Unfinished (kuning) --</option>
+<label>Edit Data</label>
+<select id="edit_select" onchange="loadEdit()" style="background:#fef3c7;">
+<option value="">-- Pilih Data --</option>
+
 <?php foreach($unfinished as $u): ?>
-<option value="<?= $u['id_transaksi'] ?>" data-nopol="<?= $u['Nopol'] ?>">
-<?= $u['Nopol'] ?> - <?= $u['no_record'] ?? 'NEW' ?> (Bruto: <?= number_format($u['bruto'] ?? 0, 0) ?>)
+<option value="<?= $u['id_transaksi'] ?>">
+<?= ($u['Nopol'] ?: '-') ?> - 
+<?= ($u['no_record'] ?: 'NEW') ?> 
+(Bruto: <?= number_format($u['bruto'] ?: 0,0) ?>)
 </option>
 <?php endforeach; ?>
+
+</select>
 </select>
 <label style="color: orange; font-size: 0.9em;">Kuning = berbeda dari Nopol input di atas</label>
 
