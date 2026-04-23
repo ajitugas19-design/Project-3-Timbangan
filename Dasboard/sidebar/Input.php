@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 require_once '../../config.php';
 
@@ -26,45 +27,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
         $response = ['success' => false];
         
         // Extract variables
-        $id_kendaraan = !empty($_POST['id_kendaraan']) ? (int)$_POST['id_kendaraan'] : 0; // Required per schema
+        $id_kendaraan = !empty($_POST['id_kendaraan']) ? (int)$_POST['id_kendaraan'] : null; 
         $id_supplier = !empty($_POST['cek_supplier']) && !empty($_POST['id_supplier']) ? (int)$_POST['id_supplier'] : 0;
-        $id_material = !empty($_POST['id_material']) ? (int)$_POST['id_material'] : 0;
+        $id_material  = !empty($_POST['id_material']) ? (int)$_POST['id_material'] : null;
         $id_customers = !empty($_POST['cek_customer']) && !empty($_POST['id_customers']) ? (int)$_POST['id_customers'] : 0;
         $bruto = ($_POST['bruto'] !== '') ? (float)$_POST['bruto'] : null;
-        $tara = ($_POST['tara'] !== '') ? (float)$_POST['tara'] : null;
-        $netto = $bruto && $tara ? $bruto - $tara : 0;
-        
-        // CSRF check
-        if (!hash_equals($csrf_token, $_POST['csrf_token'] ?? '')) {
-            throw new Exception('CSRF token invalid');
+        $tara  = ($_POST['tara'] !== '') ? (float)$_POST['tara'] : null;
+        $netto = ($_POST['netto'] !== '') ? (float)$_POST['netto'] : null;
+
+        /* ================= HITUNG 3 ARAH ================= */
+        /* ================= HITUNG 3 ARAH ================= */
+        if ($bruto !== null && $tara !== null) {
+            $netto = $bruto - $tara;
         }
-        
+        elseif ($bruto !== null && $netto !== null) {
+            $tara = $bruto - $netto;
+        }
+        elseif ($tara !== null && $netto !== null) {
+            $bruto = $tara + $netto;
+        }
+        else {
+            $bruto = $bruto ?? 0;
+            $tara  = $tara ?? 0;
+            $netto = $netto ?? 0;
+        }
+
         // Validation
-        if (!$id_material) throw new Exception('Material harus dipilih');
-        if (!$bruto || $bruto <= 0 || !$tara || $tara <= 0) throw new Exception('Bruto dan Tara harus > 0');
-        if (empty($_POST['tgl_masuk']) || empty($_POST['jam_masuk']) || empty($_POST['tgl_keluar']) || empty($_POST['jam_keluar'])) {
-            throw new Exception('Lengkapi waktu masuk dan keluar');
-        }
+    if ($bruto < 0 || $tara < 0 || $netto < 0) {
+        throw new Exception('Nilai tidak boleh negatif');
+    }
         
         // FK validation - ALL REQUIRED per schema
+    if ($id_kendaraan > 0) {
         $check = $pdo->prepare('SELECT COUNT(*) FROM kendaraan WHERE id_Kendaraan = ?');
         $check->execute([$id_kendaraan]);
         if ($check->fetchColumn() == 0) throw new Exception('Kendaraan tidak ditemukan');
-        
+    }
+
+    if ($id_material > 0) {
         $check = $pdo->prepare('SELECT COUNT(*) FROM material WHERE id_Material = ?');
         $check->execute([$id_material]);
         if ($check->fetchColumn() == 0) throw new Exception('Material tidak ditemukan');
+    }
         
-        if ($id_supplier) {
-            $check = $pdo->prepare('SELECT COUNT(*) FROM supplier WHERE id_Supplier = ?');
-            $check->execute([$id_supplier]);
-            if ($check->fetchColumn() == 0) throw new Exception('Supplier tidak ditemukan');
-        }
-        if ($id_customers) {
-            $check = $pdo->prepare('SELECT COUNT(*) FROM customers WHERE id_Customers = ?');
-            $check->execute([$id_customers]);
-            if ($check->fetchColumn() == 0) throw new Exception('Customer tidak ditemukan');
-        }
+    $id_supplier = (!empty($_POST['cek_supplier']) && !empty($_POST['id_supplier']))
+    ? (int)$_POST['id_supplier']
+    : null;
+
+    $id_customers = (!empty($_POST['cek_customer']) && !empty($_POST['id_customers']))
+    ? (int)$_POST['id_customers']
+    : null;
         
         // Generate unique no_record
         $date_prefix = date('Ymd');
@@ -167,8 +179,9 @@ if (isset($_GET['edit']) && isLoggedIn()) {
 <html>
 <head>
 <title>Input Timbangan - FIXED</title>
+<script src="Input_FIXED.js"></script>
 <style>
-.container {max-width:1200px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
+.container {max-width:1100px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
 .grid {display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 label {font-weight:bold;display:block;margin:5px 0;}
 input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;box-sizing:border-box;}
@@ -184,6 +197,11 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 .toast.success {background:#10b981;}
 .toast.error {background:#ef4444;}
 .spinner {opacity:0.5;pointer-events:none;}
+
+.form-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); display: none; z-index: 1000; }
+.form-overlay.active { display: block; }
+.form-slide { position: fixed; right: calc(-1 * 350px); top: 0; width: 350px; height: 100vh; background: white; padding: 24px; transition: right 0.3s ease; z-index: 1001; box-shadow: -4px 0 20px rgba(0,0,0,0.15); overflow-y: auto; }
+.form-slide.active { right: 0; }
 </style>
 </head>
 <body>
@@ -202,7 +220,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input name="no_record" value="<?= $no_record ?>" readonly>
 
 <label>No Polisi</label>
-<input id="nopol" list="kendaraan-list" required>
+<input id="nopol" list="kendaraan-list" placeholder="Pilih No Polisi">
 <datalist id="kendaraan-list">
 <?php foreach($kendaraan as $k): ?>
 <option value="<?= $k['Nopol'] ?>" data-id="<?= $k['id_Kendaraan'] ?>" data-sopir="<?= $k['Sopir'] ?>">
@@ -234,7 +252,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input type="hidden" name="id_supplier" id="id_supplier">
 
 <label>Material</label>
-<input id="material-input" list="material-list" required placeholder="Ketik nama material">
+<input id="material-input" list="material-list" placeholder="Pilih nama material">
 <datalist id="material-list">
 <?php foreach($materials as $m): ?>
 <option value="<?= $m['Material'] ?>" data-id="<?= $m['id_Material'] ?>">
@@ -272,12 +290,12 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 <div>
 <label>Netto</label>
-<input type="number" step="0.01" name="netto" id="netto" readonly>
+<input type="number" step="0.01" name="netto" id="netto">
 </div>
 </div>
 
 <div class="center">
-<button type="button" class="btn" onclick="calculate()">HITUNG NETTO</button>
+<button type="button" class="btn" onclick="calculate()">HITUNG</button>
 </div>
 
 <label>Tanggal Keluar</label>
@@ -290,28 +308,11 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 
 <button type="submit" class="btn">SIMPAN KE DATABASE</button>
+<input type="hidden" name="action" value="add">
 </form>
 
+<script src="/Project_3/Dasboard/sidebar/Input_FIXED.js"></script>
 <script>
-// Auto sopir (overwrite if exact match, else keep manual)
-document.getElementById('nopol').addEventListener('input', function(){
-    const options = document.querySelectorAll('#kendaraan-list option');
-    let found = false;
-    for(let opt of options){
-        if(opt.value === this.value){
-            document.getElementById('id_kendaraan').value = opt.dataset.id;
-            document.getElementById('sopir').value = opt.dataset.sopir || '';
-            document.getElementById('sopir').title = 'Auto dari DB';
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        document.getElementById('id_kendaraan').value = '';
-        document.getElementById('sopir').title = 'Manual input';
-    }
-});
-
 // Checkbox toggle show/hide + disable/enable
 document.getElementById('cek_customer').addEventListener('change', function(){
     const sel = document.getElementById('customer-input');
@@ -360,20 +361,15 @@ setupDatalistListener('customer-input', 'customer-list', 'id_customers');
 setupDatalistListener('supplier-input', 'supplier-list', 'id_supplier');
 setupDatalistListener('material-input', 'material-list', 'id_material');
 
-// Calculate
-function calculate(){
-    const b = parseFloat(document.getElementById('bruto').value) || 0;
-    const t = parseFloat(document.getElementById('tara').value) || 0;
-    document.getElementById('netto').value = (b - t).toFixed(2);
-}
-
 // Load edit with AJAX
 function loadEdit(){
     const sel = document.getElementById('edit_select');
     const id = sel.value;
     if(!id) return;
     
-    fetch('sidebar/Input.php?edit=' + id)
+    const baseUrl = window.CURRENT_BASE_PATH || '';
+    console.log('loadEdit URL:', `${baseUrl}/Input.php?edit=${id}`);
+    fetch(`${window.CURRENT_BASE_PATH}/Input.php?edit=` + id)
         .then(response => response.json())
         .then(data => {
             if(data.error) {
@@ -401,6 +397,7 @@ function loadEdit(){
             if (data.Customers) {
                 document.getElementById('cek_customer').checked = true;
                 const customerInput = document.getElementById('customer-input');
+                customerInput.style.display = 'block';
                 customerInput.value = data.Customers;
                 customerInput.dispatchEvent(new Event('input'));
             }
@@ -413,17 +410,6 @@ function loadEdit(){
                 supplierInput.dispatchEvent(new Event('input'));
             }
             
-            if (data.Customers) {
-                document.getElementById('cek_customer').checked = true;
-                const customerInput = document.getElementById('customer-input');
-                customerInput.style.display = 'block';
-                customerInput.value = data.Customers;
-                customerInput.dispatchEvent(new Event('input'));
-            }
-            
-            calculate();
-
-            
             calculate();
             alert('Data loaded for editing');
         })
@@ -434,10 +420,21 @@ function loadEdit(){
 const form = document.querySelector('form');
 const submitBtn = form.querySelector('button[type="submit"]');
 
+  }); // Close DOMContentLoaded
+  
+  // Global functions - safe for multiple calls
+  window.calculate = calculate;
+  window.validate = validate;
+  window.loadEdit = loadEdit;
+  window.loadUnfinished = loadUnfinished;
+}); // End DOMContentLoaded
+
+// Form submit outside DOMContentLoaded for dynamic binding
 form.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    if (!validate()) return;
+    if (!window.validateForm && !validate()) return;
+    if (window.validateForm && !window.validateForm()) return;
     
     // Spinner
     submitBtn.textContent = 'Menyimpan...';
@@ -447,7 +444,9 @@ form.addEventListener('submit', async function(e) {
     const fd = new FormData(form);
     
     try {
-        const res = await fetch('sidebar/Input.php', {
+        const baseUrl = window.CURRENT_BASE_PATH || '';
+        console.log('✅ POST URL:', `${baseUrl}/Input.php`);
+        const res = await fetch(`${baseUrl}/Input.php`, {
             method: 'POST',
             body: fd
         });
@@ -498,7 +497,9 @@ async function loadUnfinished() {
     select.innerHTML = '<option value="">-- Loading unfinished... --</option>';
     
     try {
-        const res = await fetch('sidebar/Input.php?unfinished=1');
+        const baseUrl = window.CURRENT_BASE_PATH || '';
+        console.log('loadUnfinished URL:', `${baseUrl}/Input.php?unfinished=1`);
+        const res = await fetch(`${window.CURRENT_BASE_PATH}/Input.php?unfinished=1`);
         const unfinished = await res.json();
         
         select.innerHTML = '<option value="">-- Pilih Unfinished (kuning) --</option>';
@@ -518,23 +519,42 @@ async function loadUnfinished() {
     }
 }
 
-// ================= AUTO CALCULATE =================
-['bruto', 'tara'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calculate);
-});
-
 function calculate() {
-    const b = parseFloat(document.getElementById('bruto').value) || 0;
-    const t = parseFloat(document.getElementById('tara').value) || 0;
-    document.getElementById('netto').value = (b - t).toFixed(2);
+    let bruto = parseFloat(document.getElementById('bruto').value);
+    let tara  = parseFloat(document.getElementById('tara').value);
+    let netto = parseFloat(document.getElementById('netto').value);
+
+    // hitung netto
+    if (!isNaN(bruto) && !isNaN(tara)) {
+        document.getElementById('netto').value = (bruto - tara).toFixed(2);
+    }
+    // hitung tara
+    else if (!isNaN(bruto) && !isNaN(netto)) {
+        document.getElementById('tara').value = (bruto - netto).toFixed(2);
+    }
+    // hitung bruto
+    else if (!isNaN(tara) && !isNaN(netto)) {
+        document.getElementById('bruto').value = (tara + netto).toFixed(2);
+    }
+    else {
+        alert("Isi minimal 2 field!");
+    }
 }
 
 // Validate (client-side)
 function validate() {
     const id_kendaraan = document.getElementById('id_kendaraan').value;
+    const id_material = document.getElementById('id_material').value;
+    const bruto = document.getElementById('bruto').value.trim();
+    const tara = document.getElementById('tara').value.trim();
+    const netto = document.getElementById('netto').value.trim();
+    
     if(!id_kendaraan) return alert('Pilih No Polisi!'), false;
-if(!document.getElementById('id_material').value) return alert('Pilih Material!'), false;
-    if(!document.getElementById('bruto').value || !document.getElementById('tara').value) return alert('Isi Bruto & Tara!'), false;
+    if(!id_material) return alert('Pilih Material!'), false;
+    
+    const count = (bruto ? 1 : 0) + (tara ? 1 : 0) + (netto ? 1 : 0);
+    if(count < 2) return alert('Isi minimal 2 field berat (Bruto/Tara/Netto)!'), false;
+    
     return true;
 }
 </script>

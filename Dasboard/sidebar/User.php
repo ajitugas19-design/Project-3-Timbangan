@@ -127,6 +127,7 @@ $users = $pdo->query("SELECT * FROM user ORDER BY nama")->fetchAll(PDO::FETCH_AS
   --dark: #374151;
   --light: #f3f4f6;
   --shadow: 0 4px 6px rgba(0,0,0,0.1);
+  --form-slide-width: 350px;
 }
 body {
   font-family: 'Segoe UI', sans-serif;
@@ -162,9 +163,9 @@ img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
 .action { display: flex; gap: 6px; }
 .edit { background: var(--warning); color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
 .hapus { background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
-.form-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1000; }
+.form-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); display: none; z-index: 1000; }
 .form-overlay.active { display: block; }
-.form-slide { position: fixed; right: -400px; top: 0; width: 350px; height: 100%; background: white; padding: 20px; transition: 0.3s; z-index: 1001; box-shadow: -4px 0 20px rgba(0,0,0,0.1); }
+.form-slide { position: fixed; right: calc(-1 * var(--form-slide-width)); top: 0; width: var(--form-slide-width); height: 100vh; background: white; padding: 24px; transition: right 0.3s ease; z-index: 1001; box-shadow: -4px 0 20px rgba(0,0,0,0.15); overflow-y: auto; }
 .form-slide.active { right: 0; }
 input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
 .btn-save { background: var(--success); color: white; padding: 12px; width: 100%; border: none; border-radius: 8px; font-weight: 500; }

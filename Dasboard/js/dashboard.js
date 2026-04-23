@@ -62,6 +62,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // ================= BODY CONTENT =================
       content.innerHTML = doc.body.innerHTML;
+      // Pass BASE_PATH to loaded content - fix for sidebar files
+      // Pass BASE_PATH to loaded content - CORRECTED for sidebar files
+      const basePathScript = document.createElement("script");
+      basePathScript.textContent = `window.CURRENT_BASE_PATH = (window.BASE_PATH || '') + '/sidebar'; console.log('✅ BASE_PATH set for sidebar:', window.CURRENT_BASE_PATH);`;
+      document.body.appendChild(basePathScript);
 
       // ================= CSS INJECTION FIX =================
       const cssList = doc.querySelectorAll("link[rel='stylesheet'], style");

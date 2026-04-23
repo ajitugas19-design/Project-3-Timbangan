@@ -235,10 +235,10 @@ tr:hover{
 }
 .table-container { background:white; border-radius:12px; margin-top:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1); overflow:hidden; }
 
-.form-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; z-index:1000; }
+.form-overlay { position:fixed; top:0; left:0; width:100%; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:1000; }
 .form-overlay.active { display:block; }
 
-.form-slide { position:fixed; right:-400px; top:0; width:400px; height:100vh; background:white; box-shadow:-4px 0 20px rgba(0,0,0,0.3); padding:30px; transition:0.3s ease; z-index:1001; overflow-y:auto; }
+.form-slide { position:fixed; right: calc(-1 * 350px); top:0; width:350px; height:100vh; background:white; box-shadow:-4px 0 20px rgba(0,0,0,0.15); padding:24px; transition:right 0.3s ease; z-index:1001; overflow-y:auto; }
 .form-slide.active { right:0; }
 
 input, select { width:100%; padding:12px; margin-bottom:15px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; font-size:14px; }

@@ -25,6 +25,7 @@ if (isset($_GET['logout'])) {
 <title>Dashboard Timbangan</title>
 <link rel="stylesheet" href="css/dashboard.css">
 <script src="js/dashboard.js" defer></script>
+<script>window.BASE_PATH = '<?= dirname($_SERVER['SCRIPT_NAME']) ?>';</script>
 </head>
 <body>
 <!-- SIDEBAR OVERLAY -->
