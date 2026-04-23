@@ -122,6 +122,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
+  // Fix untuk onclick="logout()" di Navbar.php
+  window.logout = confirmLogout;
+
   // ================= AUTO LOAD =================
   window.addEventListener("load", () => {
     loadContent("sidebar/Input.php", "Input");

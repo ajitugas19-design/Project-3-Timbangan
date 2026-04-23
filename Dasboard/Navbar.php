@@ -1,4 +1,5 @@
-<?php
+<?php 
+ob_start();
 session_start();
 require_once '../config.php';
 
@@ -51,7 +52,7 @@ if (isset($_GET['logout'])) {
 <a class="nav-item" onclick="loadContent('sidebar/Informasi_Data.php','Data', this)">Informasi Data</a>
 <a class="nav-item" onclick="loadContent('sidebar/Laporan.php','Laporan', this)">Laporan</a>
 <a class="nav-item" onclick="loadContent('sidebar/User.php','User', this)">User</a>
-<a class="nav-item" onclick="logout()" style="color: #ff4444; border-top: 1px solid #ccc; padding-top: 10px;">Logout</a>
+<a class="nav-item" onclick="confirmLogout()" style="color: #ff4444; border-top: 1px solid #ccc; padding-top: 10px;">Logout</a>
 </nav>
 
 <!-- MAIN -->

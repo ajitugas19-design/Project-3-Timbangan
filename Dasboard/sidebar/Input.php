@@ -301,6 +301,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
         </select>
 <label style="color: orange; font-size: 0.9em;">Isi Truk 2x</label>
 
+<br></br>
 
 <div class="box">
 <div>
@@ -321,13 +322,13 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <div class="center">
 <button type="button" class="btn" onclick="calculate()">HITUNG</button>
 </div>
+
+<h1></h1>
+
 <hr></hr>
 <br></br>
 <br></br>
 <br></br>
-<br></br>
-
-<h1></h1>
 
 <label>Tanggal Keluar</label>
 <input type="date" name="tgl_keluar" value="<?= date('Y-m-d', strtotime('+1 day')) ?>"> 

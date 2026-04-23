@@ -96,7 +96,7 @@ button:hover {
     }
     if (isset($_GET['success'])) {
         echo '<p style="color:green;">Login berhasil! Redirecting...</p>';
-echo '<script>setTimeout(() => window.location.href = "Dasboard/sidebar/Input.php", 1000);</script>';
+echo '<script>setTimeout(() => window.location.href = "Dasboard/Navbar.php?load=Input", 1000);</script>';
     }
     ?>
     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
