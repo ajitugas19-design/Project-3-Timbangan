@@ -16,6 +16,7 @@ if (isset($_GET['logout'])) {
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -32,9 +33,14 @@ if (isset($_GET['logout'])) {
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
     <div class="profile">
-        <img src="../Img/Logo.png" class="avatar" alt="<?= htmlspecialchars($_SESSION['user_nama']) ?>">
-        <h4><?= htmlspecialchars($_SESSION['user_nama']) ?></h4>
-    </div>
+    <img src="../Img/Logo.png" class="avatar" 
+         alt="<?= htmlspecialchars($_SESSION['user_nama'] ?? 'User') ?>">
+
+    <small style="color:#ccc;">
+        Login sebagai 
+        <b><?= htmlspecialchars($_SESSION['user_nama'] ?? 'User') ?></b>
+    </small>
+</div>
 
     <a class="nav-item" onclick="loadContent('sidebar/Input.php','Input', this)">Input Data</a>
 <a class="nav-item" onclick="loadContent('sidebar/Customers.php','Customers', this)">Customers</a>

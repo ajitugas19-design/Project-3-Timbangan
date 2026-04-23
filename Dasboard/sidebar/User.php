@@ -198,7 +198,8 @@ input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; borde
 <tbody id="tbody">
 <?php $no=1; foreach($users as $u): ?>
 <tr>
-<td><img src="../<?= $u['foto'] ?: 'uploads/default.png' ?>" onerror="this.src='../uploads/default.png'"></td>
+<img src="../../<?= $u['foto'] ?: 'uploads/default.png' ?>" 
+     onerror="this.src='../../uploads/default.png'">
 <td><?= htmlspecialchars($u['nama']) ?></td>
 <td><?= htmlspecialchars($u['user'] ?? '-') ?></td>
 <td><?= htmlspecialchars($u['sebagai'] ?? '-') ?></td>
