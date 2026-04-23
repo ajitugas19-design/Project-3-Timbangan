@@ -35,8 +35,8 @@ if (isset($_GET['logout'])) {
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
     <div class="profile">
-    <img src="../Img/Logo.png" class="avatar" 
-         alt="<?= htmlspecialchars($_SESSION['user_nama'] ?? 'User') ?>">
+<img src="/Project_3/uploads/<?= basename($_SESSION['user_foto'] ?? 'default.png') ?>" class="avatar" 
+         alt="<?= htmlspecialchars($_SESSION['user_nama'] ?? 'User') ?>" onerror="this.src='/Project_3/uploads/default.png'">
 
     <small style="color:#ccc;">
         Login sebagai 

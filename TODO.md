@@ -1,13 +1,5 @@
-# Perbaikan Logout
+# Fix Foto User.php
 
-Status: Progress...
-
-## Steps:
-
-- [x] 1. Tambah `window.logout = confirmLogout;` di `Dasboard/js/dashboard.js` (fix onclick)
-- [x] 2. Tambah `ob_start()` di `Dasboard/Navbar.php` (output buffering)
-- [x] 3. Fix redirect di `Index.php` (konsistensi)
-- [x] Debug: onclick → confirmLogout() direct (no cache issue)
-- [ ] 4. Test: Login → Logout → Verify redirect & session clear
-
-Updated: [timestamp]
+- [x] 1. Buat uploads/default.png (avatar placeholder)
+- [x] 2. Edit User.php onerror logic (jika perlu)
+- [x] 3. Test & complete

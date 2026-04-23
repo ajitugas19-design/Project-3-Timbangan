@@ -56,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // ===== SET SESSION =====
                 $_SESSION['user_id']   = $row['id_user'];
-                $_SESSION['user_nama'] = $row['nama'];
+$_SESSION['user_nama'] = $row['nama'];
+$_SESSION['user_foto'] = $row['foto'] ?? null;
 
                 // regen token
                 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
