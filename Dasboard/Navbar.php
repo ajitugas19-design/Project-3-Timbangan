@@ -57,10 +57,18 @@ if (isset($_GET['logout'])) {
         </button>
         <h3 id="pageTitle">Dashboard Timbangan</h3>
     </header>
-<div class="content" id="content">
-<?php if (isset($_GET['load']) && $_GET['load'] === 'Input'): ?>
-<script>window.addEventListener('load', () => loadContent('sidebar/Input.php', 'Input'));</script>
-<?php endif; ?>
+    <div class="content" id="content">
+<?php if (isset($_GET['load'])) {
+    $page = $_GET['load'];
+
+    $allowed = ['Input', 'Home', 'Transaksi']; // whitelist
+
+    if (in_array($page, $allowed)) {
+        include __DIR__ . '/' . $page . '.php';
+    } else {
+        echo "Halaman tidak ditemukan";
+    }
+} ?>
 </div>
 </main>
 </body>

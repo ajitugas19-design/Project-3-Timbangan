@@ -12,9 +12,6 @@ if (!isLoggedIn()) {
     exit;
 }
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // CSRF Token
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -29,10 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
         $response = ['success' => false];
         
         // Extract variables
-        $id_kendaraan = !empty($_POST['id_kendaraan']) ? (int)$_POST['id_kendaraan'] : null;
-        $id_supplier = !empty($_POST['cek_supplier']) && !empty($_POST['id_supplier']) ? (int)$_POST['id_supplier'] : null;
-        $id_material = !empty($_POST['id_material']) ? (int)$_POST['id_material'] : null;
-        $id_customers = !empty($_POST['cek_customer']) && !empty($_POST['id_customers']) ? (int)$_POST['id_customers'] : null;
+        $id_kendaraan = !empty($_POST['id_kendaraan']) ? (int)$_POST['id_kendaraan'] : 0; // Required per schema
+        $id_supplier = !empty($_POST['cek_supplier']) && !empty($_POST['id_supplier']) ? (int)$_POST['id_supplier'] : 0;
+        $id_material = !empty($_POST['id_material']) ? (int)$_POST['id_material'] : 0;
+        $id_customers = !empty($_POST['cek_customer']) && !empty($_POST['id_customers']) ? (int)$_POST['id_customers'] : 0;
         $bruto = ($_POST['bruto'] !== '') ? (float)$_POST['bruto'] : null;
         $tara = ($_POST['tara'] !== '') ? (float)$_POST['tara'] : null;
         $netto = $bruto && $tara ? $bruto - $tara : 0;
@@ -49,15 +46,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
             throw new Exception('Lengkapi waktu masuk dan keluar');
         }
         
-        // FK validation (optional fields allow null)
-        if ($id_kendaraan) {
-            $check = $pdo->prepare('SELECT COUNT(*) FROM kendaraan WHERE id_Kendaraan = ?');
-            $check->execute([$id_kendaraan]);
-            if ($check->fetchColumn() == 0) throw new Exception('Kendaraan tidak ditemukan');
-        }
+        // FK validation - ALL REQUIRED per schema
+        $check = $pdo->prepare('SELECT COUNT(*) FROM kendaraan WHERE id_Kendaraan = ?');
+        $check->execute([$id_kendaraan]);
+        if ($check->fetchColumn() == 0) throw new Exception('Kendaraan tidak ditemukan');
+        
         $check = $pdo->prepare('SELECT COUNT(*) FROM material WHERE id_Material = ?');
         $check->execute([$id_material]);
         if ($check->fetchColumn() == 0) throw new Exception('Material tidak ditemukan');
+        
         if ($id_supplier) {
             $check = $pdo->prepare('SELECT COUNT(*) FROM supplier WHERE id_Supplier = ?');
             $check->execute([$id_supplier]);
@@ -106,20 +103,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
     exit;
 }
 
-
-
 // Unfinished
 $unfinished = $pdo->query("SELECT t.*, k.Nopol FROM transaksi t JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan WHERE tara = 0 OR tara IS NULL")->fetchAll();
 
-// Auto no
-$no_record = 'TRAN' . str_pad($pdo->query("SELECT COUNT(*) FROM transaksi")->fetchColumn() + 1, 4, '0', STR_PAD_LEFT);
+// Auto no_record preview (same logic as POST)
+$date_prefix = date('Ymd');
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM transaksi WHERE no_record LIKE ?');
+$stmt->execute(['TRAN' . $date_prefix . '%']);
+$seq = $stmt->fetchColumn() + 1;
+$no_record = 'TRAN' . $date_prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
 
 // Data queries for datalists
-
 $kendaraan = $pdo->query('SELECT * FROM kendaraan ORDER BY Nopol ASC')->fetchAll();
 $suppliers = $pdo->query('SELECT * FROM supplier ORDER BY Nama_Supplier ASC')->fetchAll();
 $customers = $pdo->query('SELECT * FROM customers ORDER BY Customers ASC')->fetchAll();
 $materials = $pdo->query('SELECT * FROM material ORDER BY Material ASC')->fetchAll();
+
+// Unfinished JSON endpoint
+if (isset($_GET['unfinished']) && $_GET['unfinished'] == '1') {
+    header('Content-Type: application/json');
+    $unfinished = $pdo->query("SELECT t.id_transaksi, t.no_record, t.bruto, k.Nopol 
+                               FROM transaksi t 
+                               JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan 
+                               WHERE (t.tara = 0 OR t.tara IS NULL) 
+                               ORDER BY t.id_transaksi DESC")->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode($unfinished);
+    exit;
+}
 
 // Edit AJAX endpoint
 if (isset($_GET['edit']) && isLoggedIn()) {
@@ -127,8 +137,8 @@ if (isset($_GET['edit']) && isLoggedIn()) {
     $stmt = $pdo->prepare("
         SELECT t.*, k.Nopol, k.Sopir, 
                m.Material, c.Customers, s.Nama_Supplier,
-               DATE_FORMAT(wi.tanggal_in, '%Y-%m-%d') as tgl_masuk, wi.jam_in,
-               DATE_FORMAT(wo.tanggal_out, '%Y-%m-%d') as tgl_keluar, wo.jam_out
+               DATE_FORMAT(wi.tanggal_in, '%Y-m-d') as tgl_masuk, wi.jam_in,
+               DATE_FORMAT(wo.tanggal_out, '%Y-m-d') as tgl_keluar, wo.jam_out
         FROM transaksi t 
         LEFT JOIN kendaraan k ON t.id_kendaraan = k.id_Kendaraan
         LEFT JOIN material m ON t.id_material = m.id_Material
@@ -208,7 +218,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input id="customer-input" list="customer-list" style="display:none;width:100%;" placeholder="Ketik nama customer">
 <datalist id="customer-list">
 <?php foreach($customers as $c): ?>
-<option value="<?= $c['Customers'] ?>" data-id="<?= $c['id_Customers'] ?>"></option>
+<option value="<?= $c['Customers'] ?>" data-id="<?= $c['id_Customers'] ?>">
 <?php endforeach; ?>
 </datalist>
 <input type="hidden" name="id_customers" id="id_customers">
@@ -218,7 +228,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input id="supplier-input" list="supplier-list" style="display:none;width:100%;" placeholder="Ketik nama supplier">
 <datalist id="supplier-list">
 <?php foreach($suppliers as $s): ?>
-<option value="<?= $s['Nama_Supplier'] ?>" data-id="<?= $s['id_Supplier'] ?>"></option>
+<option value="<?= $s['Nama_Supplier'] ?>" data-id="<?= $s['id_Supplier'] ?>">
 <?php endforeach; ?>
 </datalist>
 <input type="hidden" name="id_supplier" id="id_supplier">
@@ -227,7 +237,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input id="material-input" list="material-list" required placeholder="Ketik nama material">
 <datalist id="material-list">
 <?php foreach($materials as $m): ?>
-<option value="<?= $m['Material'] ?>" data-id="<?= $m['id_Material'] ?>"></option>
+<option value="<?= $m['Material'] ?>" data-id="<?= $m['id_Material'] ?>">
 <?php endforeach; ?>
 </datalist>
 <input type="hidden" name="id_material" id="id_material">
@@ -271,7 +281,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 
 <label>Tanggal Keluar</label>
-<input type="date" name="tgl_keluar" value="<?= date('Y-m-d') ?>">
+<input type="date" name="tgl_keluar" value="<?= date('Y-m-d', strtotime('+1 day')) ?>"> 
 
 <label>Jam Keluar</label>
 <input type="time" name="jam_keluar">
@@ -363,7 +373,7 @@ function loadEdit(){
     const id = sel.value;
     if(!id) return;
     
-    fetch('?edit=' + id)
+    fetch('sidebar/Input.php?edit=' + id)
         .then(response => response.json())
         .then(data => {
             if(data.error) {
@@ -398,11 +408,20 @@ function loadEdit(){
             if (data.Nama_Supplier) {
                 document.getElementById('cek_supplier').checked = true;
                 const supplierInput = document.getElementById('supplier-input');
+                supplierInput.style.display = 'block';
                 supplierInput.value = data.Nama_Supplier;
                 supplierInput.dispatchEvent(new Event('input'));
             }
             
-            // Enable checkboxes
+            if (data.Customers) {
+                document.getElementById('cek_customer').checked = true;
+                const customerInput = document.getElementById('customer-input');
+                customerInput.style.display = 'block';
+                customerInput.value = data.Customers;
+                customerInput.dispatchEvent(new Event('input'));
+            }
+            
+            calculate();
 
             
             calculate();
@@ -428,7 +447,7 @@ form.addEventListener('submit', async function(e) {
     const fd = new FormData(form);
     
     try {
-        const res = await fetch('', {
+        const res = await fetch('sidebar/Input.php', {
             method: 'POST',
             body: fd
         });
@@ -437,10 +456,18 @@ form.addEventListener('submit', async function(e) {
         showToast(data.message, data.success);
         
         if (data.success) {
-            form.reset();
+            // Reset but keep no_record preview logic if needed
             document.getElementById('id_transaksi').value = '';
             document.getElementById('nopol').value = '';
-            loadUnfinished(); // Reload list
+            document.getElementById('sopir').value = '';
+            document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#customer-input, #supplier-input').forEach(input => {
+                input.style.display = 'none';
+                input.value = '';
+            });
+            document.getElementById('id_customers').value = document.getElementById('id_supplier').value = document.getElementById('id_material').value = '';
+            loadUnfinished(); // Reload unfinished list dynamically
+            calculate(); // Reset netto
         }
     } catch (err) {
         showToast('Network error: ' + err.message, false);
@@ -467,14 +494,27 @@ function showToast(msg, success = true) {
 
 // ================= RELOAD UNFINISHED =================
 async function loadUnfinished() {
+    const select = document.getElementById('edit_select');
+    select.innerHTML = '<option value="">-- Loading unfinished... --</option>';
+    
     try {
-        const res = await fetch(''); // Would need endpoint for unfinished list
-        const html = await res.text();
-        // Parse and update select - simplified for now
-        // In full impl: fetch JSON endpoint for unfinished
-        location.reload(); // Temp: full reload unfinished list
-    } catch {
-        // Ignore
+        const res = await fetch('sidebar/Input.php?unfinished=1');
+        const unfinished = await res.json();
+        
+        select.innerHTML = '<option value="">-- Pilih Unfinished (kuning) --</option>';
+        unfinished.forEach(item => {
+            const option = new Option(
+                `${item.Nopol} - ${item.no_record || 'NEW'} (Bruto: ${parseFloat(item.bruto || 0).toLocaleString()})`,
+                item.id_transaksi,
+                false,
+                false
+            );
+            option.dataset.nopol = item.Nopol;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        select.innerHTML = '<option value="">-- Error loading unfinished --</option>';
+        console.error('Load unfinished error:', err);
     }
 }
 
