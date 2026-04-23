@@ -296,14 +296,15 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </option>
 <?php endforeach; ?>
 
-</select>
-</select>
+        </select>
 <label style="color: orange; font-size: 0.9em;">Kuning = berbeda dari Nopol input di atas</label>
+
 
 <div class="box">
 <div>
-<label>Bruto</label>
+<label>Bruto <span id="brutoSource" style="font-size:0.8em;color:#666;">(manual)</span></label>
 <input type="number" step="0.01" name="bruto" id="bruto">
+
 </div>
 <div>
 <label>Tara</label>
@@ -332,7 +333,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input type="hidden" name="action" value="add">
 </form>
 
-<script src="/Project_3/Dasboard/sidebar/Input_FIXED.js"></script>
+<script src="/Project_3/Dasboard/js/Input_FIXED.js"></script>
 <script>
 // Checkbox toggle show/hide + disable/enable
 document.getElementById('cek_customer').addEventListener('change', function(){
@@ -499,6 +500,83 @@ form.addEventListener('submit', async function(e) {
 });
 
 // ================= TOAST =================
+// RS232 POLLING (add before existing scripts)
+let pollInterval;
+
+function startPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    
+    pollInterval = setInterval(async () => {
+        try {
+            const baseUrl = window.CURRENT_BASE_PATH || './';
+            const apiUrl = `${baseUrl}api/scale_logs.php`;
+            
+            // Latest weight
+            const weightRes = await fetch(`${apiUrl}?action=latest_weight`);
+            const weightData = await weightRes.json();
+            if (weightData.parsed_weight !== null) {
+                document.getElementById('latestWeight').textContent = weightData.parsed_weight.toFixed(2);
+                document.getElementById('scaleTime').textContent = new Date(weightData.timestamp).toLocaleString();
+                document.getElementById('scaleStatus').textContent = '🟢 Live';
+                document.getElementById('scaleStatus').style.color = 'green';
+            }
+            
+            refreshLogs();
+        } catch (e) {
+            document.getElementById('scaleStatus').textContent = '🔴 Offline';
+            document.getElementById('scaleStatus').style.color = 'red';
+        }
+    }, 3000);
+    
+    refreshLogs();
+}
+
+async function refreshLogs() {
+    try {
+        const baseUrl = window.CURRENT_BASE_PATH || './';
+        const res = await fetch(`${baseUrl}api/scale_logs.php?action=logs&limit=20`);
+        const logs = await res.json();
+        
+        const table = document.getElementById('logsTable');
+        if (!table) return; // Not loaded yet
+        
+        if (logs.length === 0) {
+            table.innerHTML = '<em>No logs. Run: python penimbangan.py</em>';
+            return;
+        }
+        
+        table.innerHTML = logs.map(log => `
+            <div style="padding:2px 0;border-bottom:1px solid #eee;">
+                <strong>${log.parsed_weight?.toFixed(2) || 'ERR'}kg</strong> 
+                <span style="color:#666;font-size:0.8em;">${new Date(log.timestamp).toLocaleTimeString()}</span>
+                <span style="float:right;color:${log.status==='success'?'green':log.status==='error'?'red':'orange'}">[${log.status}]</span>
+                <br><small>${log.raw_data?.substring(0,50) || 'N/A'}...</small>
+            </div>
+        `).reverse().join('');
+    } catch (e) {
+        console.error('Logs error:', e);
+    }
+}
+
+function useLatestWeight() {
+    const weightEl = document.getElementById('latestWeight');
+    const weight = parseFloat(weightEl.textContent);
+    if (!isNaN(weight)) {
+        document.getElementById('bruto').value = weight.toFixed(2);
+        document.getElementById('brutoSource').textContent = '(scale)';
+        document.getElementById('brutoSource').style.color = '#1976d2';
+        calculate();
+        showToast('✅ Bruto dari scale!');
+    } else {
+        showToast('No weight available', false);
+    }
+}
+
+// Start polling
+if (document.getElementById('scaleStatus')) {
+    setTimeout(startPolling, 1000);
+}
+
 function showToast(msg, success = true) {
     const toast = document.createElement('div');
     toast.className = `toast ${success ? 'success' : 'error'}`;
@@ -511,6 +589,7 @@ function showToast(msg, success = true) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
 
 // ================= RELOAD UNFINISHED =================
 async function loadUnfinished() {
