@@ -127,151 +127,211 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <title>Informasi Data - Transaksi</title>
 
 <style>
+/* ===============================
+   CSS TABEL TRANSAKSI FULL DATA
+   SEMUA KOLOM MUAT LAYAR
+=================================*/
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
 /* CARD */
 .card{
-    background:#fff;
-    border-radius:4px;
-    padding:16px;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
-}
-
-/* HEADER */
-.header{
-    margin-bottom:18px;
-}
-
-.header h1{
-    font-size:28px;
-    color:#111827;
-}
-
-.header p{
-    color:#6b7280;
-    margin-top:5px;
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 3px 10px rgba(0,0,0,.08);
 }
 
 /* FILTER */
-.controls{
-    display:grid;
-    grid-template-columns:180px 1fr 130px;
-    gap:10px;
-    margin-bottom:18px;
+input[type="date"],
+input[type="text"],
+input[type="number"],
+select{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+  outline:none;
+  font-size:12px;
 }
 
-.controls input,
-.controls button{
-    padding:11px;
-    border-radius:10px;
-    border:1px solid #d1d5db;
+/* BUTTON */
+button,
+.btn{
+  border:none;
+  cursor:pointer;
+  border-radius:6px;
+  padding:8px 12px;
+  font-weight:600;
+  font-size:12px;
 }
 
-.controls button{
-    background:#2563eb;
-    color:#fff;
-    border:none;
-    font-weight:700;
-    cursor:pointer;
+.btn-save{
+  background:#10b981;
+  color:#fff;
+  width:100%;
+}
+
+.btn-cancel{
+  background:#6b7280;
+  color:#fff;
+  width:100%;
+  margin-top:8px;
 }
 
 /* TABLE */
-.table-wrap{
-    overflow-x:auto;
+.table-container{
+  margin-top:12px;
+  overflow-x:auto;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,.08);
+  background:#fff;
 }
 
 table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:13px;
+  width:100%;
+  border-collapse:collapse;
+  table-layout:auto; /* biar fleksibel semua tampil */
+  font-size:11px;
+}
+
+thead tr{
+  background:#111827;
 }
 
 th{
-    background:#111827;
-    color:#fff;
-    padding:10px;
+  color:#fff;
+  padding:8px 4px;
+  text-align:center;
+  font-weight:600;
+  white-space:nowrap;
 }
 
 td{
-    padding:10px;
-    border-bottom:1px solid #e5e7eb;
-    text-align:center;
+  padding:7px 4px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:center;
+  vertical-align:middle;
+  white-space:nowrap;
 }
 
-tr:hover{
-    background:#eef4ff;
+tbody tr:hover{
+  background:#eff6ff;
+}
+
+/* KOLOM KECIL */
+th:nth-child(1), td:nth-child(1){width:35px;}
+th:nth-child(2), td:nth-child(2){width:45px;}
+th:nth-child(3), td:nth-child(3){width:75px;}
+th:nth-child(4), td:nth-child(4){width:95px;}
+th:nth-child(5), td:nth-child(5){width:80px;}
+th:nth-child(6), td:nth-child(6){width:110px;}
+th:nth-child(7), td:nth-child(7){width:95px;}
+th:nth-child(8), td:nth-child(8){width:95px;}
+th:nth-child(9), td:nth-child(9){width:75px;}
+th:nth-child(10), td:nth-child(10){width:75px;}
+th:nth-child(11), td:nth-child(11){width:70px; text-align:right;}
+th:nth-child(12), td:nth-child(12){width:70px; text-align:right;}
+th:nth-child(13), td:nth-child(13){width:80px; text-align:right;}
+th:nth-child(14), td:nth-child(14){width:115px;}
+
+/* NETTO */
+.netto{
+  color:#10b981;
+  font-weight:700;
 }
 
 /* ACTION */
-.action{
-    display:flex;
-    gap:6px;
-    justify-content:center;
-}
-
-.action{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:6px;
-}
-
-.edit, .hapus{
-    padding:4px 8px;      /* kecil */
-    font-size:11px;       /* kecil */
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    display:inline-block;
-}
-
-.edit{
-    background:#f59e0b;
-    color:#fff;
-}
-
+.edit,
 .hapus{
-    background:#ef4444;
-    color:#fff;
-}
-.table-container { background:white; border-radius:12px; margin-top:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1); overflow:hidden; }
-
-.form-overlay { position:fixed; top:0; left:0; width:100%; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:1000; }
-.form-overlay.active { display:block; }
-
-.form-slide { position:fixed; right: calc(-1 * 350px); top:0; width:350px; height:100vh; background:white; box-shadow:-4px 0 20px rgba(0,0,0,0.15); padding:24px; transition:right 0.3s ease; z-index:1001; overflow-y:auto; }
-.form-slide.active { right:0; }
-
-input, select { width:100%; padding:12px; margin-bottom:15px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; font-size:14px; }
-.btn-save { background:#10b981 !important; width:100%; }
-.btn-cancel { background:#6b7280 !important; width:100%; margin-top:10px; }
-
-.message { position:fixed; top:20px; right:20px; padding:15px 20px; border-radius:10px; color:white; font-weight:600; z-index:2000; transform:translateX(400px); transition:0.3s; }
-.message.show { transform:translateX(0); }
-.success { background:#10b981; }
-.error { background:#ef4444; }
-
-
-.netto{
-    color:#10b981;
-    font-weight:700;
+  font-size:10px;
+  padding:5px 7px;
+  border:none;
+  border-radius:5px;
+  color:#fff;
+  margin:1px;
 }
 
-.alert{
-    background:#dcfce7;
-    color:#166534;
-    padding:12px;
-    border-radius:10px;
-    margin-bottom:15px;
+.edit{ background:#f59e0b; }
+.hapus{ background:#ef4444; }
+
+/* FORM */
+.form-overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100vh;
+  background:rgba(0,0,0,.45);
+  display:none;
+  z-index:1000;
 }
 
+.form-overlay.active{
+  display:block;
+}
+
+.form-slide{
+  position:fixed;
+  top:0;
+  right:-360px;
+  width:360px;
+  height:100vh;
+  background:#fff;
+  padding:18px;
+  overflow-y:auto;
+  box-shadow:-5px 0 20px rgba(0,0,0,.15);
+  transition:.3s;
+  z-index:1001;
+}
+
+.form-slide.active{
+  right:0;
+}
+
+/* TOAST */
+.message{
+  position:fixed;
+  top:15px;
+  right:15px;
+  padding:10px 14px;
+  color:#fff;
+  border-radius:8px;
+  z-index:9999;
+  font-size:12px;
+  font-weight:600;
+}
+
+.success{ background:#10b981; }
+.error{ background:#ef4444; }
+
+/* MOBILE */
 @media(max-width:768px){
-    .controls{
-        grid-template-columns:1fr;
-    }
 
-    body{
-        padding:12px;
-    }
+  body{
+    padding:6px;
+  }
+
+  table{
+    font-size:10px;
+  }
+
+  th,td{
+    padding:6px 3px;
+  }
+
+  .form-slide{
+    width:100%;
+    right:-100%;
+  }
+
+  .form-slide.active{
+    right:0;
+  }
 }
 </style>
 </head>

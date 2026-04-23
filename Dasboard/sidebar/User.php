@@ -97,15 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 function uploadFoto($file) {
-    $folder = "../../uploads/";
-    if (!is_dir($folder)) mkdir($folder, 0777, true);
+    $folder = __DIR__ . "/../../uploads/";
+
+    if (!is_dir($folder)) {
+        mkdir($folder, 0777, true);
+    }
 
     $namaFile = time() . '_' . basename($file['name']);
     $path = $folder . $namaFile;
 
     if (move_uploaded_file($file['tmp_name'], $path)) {
-        return "uploads/" . $namaFile;
+        return $namaFile; // simpan nama file saja
     }
+
     return null;
 }
 
@@ -199,7 +203,8 @@ input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; borde
 <tbody id="tbody">
 <?php $no=1; foreach($users as $u): ?>
 <tr>
-<img src="../../<?= $u['foto'] ?: 'uploads/default.png' ?>" 
+<td> 
+<img src="../../uploads/<?= $u['foto'] ?: 'default.png' ?>" 
      onerror="this.src='../../uploads/default.png'">
 <td><?= htmlspecialchars($u['nama']) ?></td>
 <td><?= htmlspecialchars($u['user'] ?? '-') ?></td>

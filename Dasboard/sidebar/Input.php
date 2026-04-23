@@ -248,7 +248,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input id="sopir" type="text" placeholder="Auto dari nopol atau manual">
 
 <label>Customer</label>
-<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_customer" name="cek_customer"> Pilih Customer</label>
+<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_customer" name="cek_customer"> </label>
 <input id="customer-input" list="customer-list" style="display:none;width:100%;" placeholder="Ketik nama customer">
 <datalist id="customer-list">
 <?php foreach($customers as $c): ?>
@@ -258,7 +258,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input type="hidden" name="id_customers" id="id_customers">
 
 <label>Supplier</label>
-<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_supplier" name="cek_supplier"> Pilih Supplier</label>
+<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_supplier" name="cek_supplier"> </label>
 <input id="supplier-input" list="supplier-list" style="display:none;width:100%;" placeholder="Ketik nama supplier">
 <datalist id="supplier-list">
 <?php foreach($suppliers as $s): ?>
@@ -275,6 +275,8 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <?php endforeach; ?>
 </datalist>
 <input type="hidden" name="id_material" id="id_material">
+
+<br></br>
 
 <label>Tanggal Masuk</label>
 <input type="date" name="tgl_masuk" value="<?= date('Y-m-d') ?>">
@@ -297,7 +299,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <?php endforeach; ?>
 
         </select>
-<label style="color: orange; font-size: 0.9em;">Kuning = berbeda dari Nopol input di atas</label>
+<label style="color: orange; font-size: 0.9em;">Isi Truk 2x</label>
 
 
 <div class="box">
@@ -319,6 +321,13 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <div class="center">
 <button type="button" class="btn" onclick="calculate()">HITUNG</button>
 </div>
+<hr></hr>
+<br></br>
+<br></br>
+<br></br>
+<br></br>
+
+<h1></h1>
 
 <label>Tanggal Keluar</label>
 <input type="date" name="tgl_keluar" value="<?= date('Y-m-d', strtotime('+1 day')) ?>"> 

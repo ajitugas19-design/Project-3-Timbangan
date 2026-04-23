@@ -69,38 +69,199 @@ $data = $pdo->query("SELECT * FROM supplier ORDER BY id_Supplier DESC")->fetchAl
 <title>Supplier</title>
 
 <style>
-/* CSS STANDARDIZED */
-:root {
-  --danger: #ef4444;
-  --warning: #eab308;
-  --dark: #374151;
-  --light: #f3f4f6;
-  --shadow: 0 4px 6px rgba(0,0,0,0.1);
-  --form-slide-width: 350px;
+/* CSS STANDARDIZED - TABEL RAPIH & SEJAJAR */
+:root{
+  --primary:#10b981;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --dark:#374151;
+  --light:#f3f4f6;
+  --shadow:0 4px 6px rgba(0,0,0,.1);
+  --form-slide-width:350px;
 }
 
-.btn{ background:var(--primary,#10b981); color:white; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; }
-.table-container{ background:white; border-radius:12px; margin-top:20px; overflow:hidden; box-shadow:var(--shadow); }
-table{ width:100%; border-collapse:collapse; }
-th{ background:#374151; color:white; padding:12px; }
-td{ padding:12px; border-bottom:1px solid #eee; }
-.edit{ background:#f59e0b; color:white; border:none; padding:8px 14px; border-radius:8px; }
-.hapus{ background:#ef4444; color:white; border:none; padding:8px 14px; border-radius:8px; }
+/* BUTTON */
+.btn{
+  background:var(--primary);
+  color:#fff;
+  padding:10px 20px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+}
 
-.form-overlay{ position:fixed; top:0; left:0; width:100%; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:1000; }
-.form-overlay.active{ display:block; }
+/* TABLE */
+.table-container{
+  background:#fff;
+  border-radius:12px;
+  margin-top:20px;
+  overflow-x:auto;
+  box-shadow:var(--shadow);
+}
 
-.form-slide{ position:fixed; right: calc(-1 * var(--form-slide-width)); top:0; width:var(--form-slide-width); height:100vh; background:white; padding:24px; transition:right 0.3s ease; z-index:1001; box-shadow:-4px 0 20px rgba(0,0,0,0.15); overflow-y:auto; }
-.form-slide.active{ right:0; }
+table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed; /* penting agar lurus */
+}
 
-input{ width:100%; padding:10px; margin-bottom:10px; }
+thead tr{
+  background:#374151;
+}
 
-.btn-save{ background:#10b981; color:white; padding:10px; width:100%; border:none; border-radius:8px; }
-.btn-cancel{ background:#6b7280; color:white; padding:10px; width:100%; border:none; border-radius:8px; margin-top:10px; }
+th{
+  color:#fff;
+  padding:14px 12px;
+  text-align:center;
+  font-size:14px;
+  font-weight:600;
+}
 
-.message{position:fixed;top:20px;right:20px;padding:15px;border-radius:10px;color:white;}
-.success{background:#10b981;}
-.error{background:#ef4444;}
+td{
+  padding:12px;
+  border-bottom:1px solid #eee;
+  font-size:14px;
+  vertical-align:middle;
+  word-wrap:break-word;
+}
+
+/* LEBAR KOLOM */
+th:nth-child(1),
+td:nth-child(1){
+  width:60px;
+  text-align:center;
+}
+
+th:nth-child(2),
+td:nth-child(2){
+  width:220px;
+  text-align:left;
+}
+
+th:nth-child(3),
+td:nth-child(3){
+  width:220px;
+  text-align:left;
+}
+
+th:nth-child(4),
+td:nth-child(4){
+  width:220px;
+  text-align:left;
+}
+
+th:nth-child(5),
+td:nth-child(5){
+  width:180px;
+  text-align:center;
+}
+
+/* HOVER */
+tbody tr:hover{
+  background:#f9fafb;
+}
+
+/* ACTION BUTTON */
+.edit,
+.hapus{
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  color:#fff;
+  cursor:pointer;
+  font-size:13px;
+  margin:2px;
+}
+
+.edit{
+  background:#f59e0b;
+}
+
+.hapus{
+  background:#ef4444;
+}
+
+/* FORM */
+.form-overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100vh;
+  background:rgba(0,0,0,.5);
+  display:none;
+  z-index:1000;
+}
+
+.form-overlay.active{
+  display:block;
+}
+
+.form-slide{
+  position:fixed;
+  right:calc(-1 * var(--form-slide-width));
+  top:0;
+  width:var(--form-slide-width);
+  height:100vh;
+  background:#fff;
+  padding:24px;
+  transition:.3s;
+  z-index:1001;
+  box-shadow:-4px 0 20px rgba(0,0,0,.15);
+  overflow-y:auto;
+}
+
+.form-slide.active{
+  right:0;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border:1px solid #ddd;
+  border-radius:6px;
+  box-sizing:border-box;
+}
+
+.btn-save{
+  background:#10b981;
+  color:#fff;
+  padding:10px;
+  width:100%;
+  border:none;
+  border-radius:8px;
+}
+
+.btn-cancel{
+  background:#6b7280;
+  color:#fff;
+  padding:10px;
+  width:100%;
+  border:none;
+  border-radius:8px;
+  margin-top:10px;
+}
+
+/* MESSAGE */
+.message{
+  position:fixed;
+  top:20px;
+  right:20px;
+  padding:15px;
+  border-radius:10px;
+  color:#fff;
+  z-index:9999;
+}
+
+.success{
+  background:#10b981;
+}
+
+.error{
+  background:#ef4444;
+}
 </style>
 </head>
 
