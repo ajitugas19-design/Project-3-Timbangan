@@ -258,7 +258,7 @@ input{
 }
 
 .btn-print{
-  background:#facc15;   /* KUNING */
+  background: #0494e7;   /* KUNING */
   color:#fff;
   padding:10px 20px;
   border:none;
@@ -269,7 +269,7 @@ input{
 }
 
 .btn-print:hover{
-  background:#eab308;
+  background:#87CEEB;
 }
 
 </style>

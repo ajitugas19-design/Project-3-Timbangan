@@ -392,7 +392,7 @@ th:nth-child(14), td:nth-child(14){width:115px;}
 <td><?= htmlspecialchars($d['tanggal_out']) ?></td>
 <td style="text-align:right;"><?= number_format($d['bruto']) ?></td>
 <td style="text-align:right;"><?= number_format($d['tara']) ?></td>
-<td class="netto" style="font-weight:bold;color:#10b981;"><?= number_format($d['netto']/1000,2) ?> Ton</td>
+<td class="netto" style="font-weight:bold;color:#10b981;"><?= number_format($d['netto']/1000,2) ?> </td>
 <td>
 <button class="edit" onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>✏️ EDIT</button>
 <button class="hapus" onclick="hapus(<?= (int)$d['id_transaksi'] ?>)">🗑 HAPUS</button>

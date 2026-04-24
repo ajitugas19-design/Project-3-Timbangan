@@ -196,7 +196,6 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </head>
 <body>
 <div class="container">
-<h1>Input Timbangan</h1>
 
 <form method="POST">
 <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
@@ -269,8 +268,23 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <option value="<?= $u['id_transaksi'] ?>"><?= ($u['Nopol'] ?: '-') ?> - <?= ($u['no_record'] ?: 'NEW') ?> (Bruto: <?= number_format($u['bruto'] ?: 0,0) ?>)</option>
 <?php endforeach; ?>
 </select>
-<label style="color: orange; font-size: 0.9em;">Isi Truk 2x</label>
 <br><br>
+
+<!-- Panel Timbangan RS232 -->
+<div style="border:2px solid #28a745;border-radius:8px;padding:15px;margin-bottom:15px;background:#f8fff8;">
+  <h3 style="margin-top:0;color:#28a745;font-size:1.1em;">📟 Timbangan Digital (RS232)</h3>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <span id="scaleStatus" style="font-weight:bold;">⚪ Menghubungkan...</span>
+    <span id="scaleTime" style="font-size:0.85em;color:#666;"></span>
+  </div>
+  <div style="font-size:2em;font-weight:bold;color:#1976d2;text-align:center;padding:10px;background:#e3f2fd;border-radius:5px;margin-bottom:10px;">
+    <span id="latestWeight">--</span> <span style="font-size:0.5em;color:#666;">kg</span>
+  </div>
+  <button type="button" class="btn" onclick="useLatestWeight()" style="width:100%;margin-bottom:10px;background:#1976d2;">🔄 Ambil ke Bruto</button>
+  <div id="logsTable" style="max-height:150px;overflow-y:auto;font-size:0.85em;border:1px solid #ddd;border-radius:5px;padding:8px;background:#fff;">
+    <em>Memuat log timbangan...</em>
+  </div>
+</div>
 
 <div class="box">
 <div>
@@ -292,7 +306,6 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 <h1></h1>
 <hr>
-<br><br><br>
 
 <label>Tanggal Keluar</label>
 <input type="date" name="tgl_keluar" id="tgl_keluar" value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
