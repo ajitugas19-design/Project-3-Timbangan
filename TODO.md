@@ -1,5 +1,27 @@
-# Fix Foto User.php
+# TODO: Perbaiki Koneksi Laporan.php dengan Dasboard/Laporan
 
-- [x] 1. Buat uploads/default.png (avatar placeholder)
-- [x] 2. Edit User.php onerror logic (jika perlu)
-- [x] 3. Test & complete
+## Status: Selesai
+
+### Step 1: [✓] Edit Dasboard/sidebar/Laporan.php
+
+- Fix typo "Dasbord" → "Dashboard" di JS exportPDF & exportWord
+- Tambah handler excel=1 untuk JSON output
+- Fix bug $total_params
+
+### Step 2: [✓] Edit Dasboard/Laporan/laporan_pdf.php
+
+- Perbaiki path fetch HTML ke Struktur.php yang benar
+
+### Step 3: [✓] Edit Dasboard/Laporan/laporan_word.php
+
+- Perbaiki URL fetch HTML ke Struktur.php yang benar
+
+### Step 4: [✓] Test Semua Fitur
+
+- PDF export
+- Word export
+- Excel export
+- Print
+- Pagination & filter
+
+### Step 5: [✓] Complete

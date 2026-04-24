@@ -89,7 +89,7 @@ $data = $pdo->query("SELECT * FROM material ORDER BY id_Material DESC")->fetchAl
   font-weight:600;
 }
 
-/* TABLE */
+/* TABLE CONTAINER */
 .table-container{
   background:#fff;
   border-radius:12px;
@@ -98,80 +98,82 @@ $data = $pdo->query("SELECT * FROM material ORDER BY id_Material DESC")->fetchAl
   box-shadow:var(--shadow);
 }
 
+/* TABLE FIXED ALIGN */
 table{
   width:100%;
   border-collapse:collapse;
-  table-layout:fixed; /* agar semua kolom sejajar */
+  table-layout:fixed;
 }
 
+/* HEADER */
 thead tr{
   background:#374151;
 }
 
 th{
   color:#fff;
-  padding:14px 12px;
+  padding:12px;
   text-align:center;
   font-size:14px;
   font-weight:600;
+  border:1px solid #2b3440;
 }
 
+/* BODY CELL */
 td{
-  padding:12px;
-  border-bottom:1px solid #eee;
-  font-size:14px;
+  padding:10px;
+  border:1px solid #eee;
+  font-size:13px;
+  text-align:center;
   vertical-align:middle;
-  word-wrap:break-word;
+
+  /* FIX BIAR TIDAK BERANTAKAN */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-/* LEBAR KOLOM */
+/* KOLOM LEBIH STABIL */
 th:nth-child(1),
 td:nth-child(1){
   width:60px;
-  text-align:center;
 }
 
 th:nth-child(2),
 td:nth-child(2){
-  width:180px;
-  text-align:center;
+  width:150px;
 }
 
 th:nth-child(3),
 td:nth-child(3){
   text-align:left;
+  width:auto;
 }
 
 th:nth-child(4),
 td:nth-child(4){
-  width:180px;
-  text-align:center;
+  width:160px;
 }
 
 /* HOVER */
 tbody tr:hover{
-  background:#f9fafb;
+  background:#f3f4f6;
 }
 
-/* BUTTON ACTION */
+/* ACTION BUTTON */
 .edit,
 .hapus{
   border:none;
-  padding:8px 14px;
-  border-radius:8px;
+  padding:6px 10px;
+  border-radius:6px;
   color:#fff;
   cursor:pointer;
-  font-size:13px;
+  font-size:12px;
   margin:2px;
 }
 
-.edit{
-  background:#f59e0b;
-}
-
-.hapus{
-  background:#ef4444;
-}
+.edit{ background:#f59e0b; }
+.hapus{ background:#ef4444; }
 
 /* FORM */
 .form-overlay{
@@ -254,14 +256,33 @@ input{
 .error{
   background:#ef4444;
 }
+
+.btn-print{
+  background:#facc15;   /* KUNING */
+  color:#fff;
+  padding:10px 20px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  margin-left:5px;
+}
+
+.btn-print:hover{
+  background:#eab308;
+}
+
 </style>
 </head>
 
 <body>
 
 <div id="messageContainer"></div>
-
 <button class="btn" onclick="openAdd()">+ Tambah Material</button>
+
+<a href="/Project_3/Dasboard/Laporan/laporan_material.php" target="_blank">
+    <button class="btn-print">🖨 Print Material</button>
+</a>
 
 <div class="table-container">
 <table>
@@ -359,6 +380,11 @@ window.openEdit = function(d){
     openForm();
 }
 
+window.closeForm = function(){
+    document.getElementById('slide').classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
+};
+
 // ===== DELETE =====
 window.hapus = function(id){
     if(!confirm('Hapus data?')) return;
@@ -419,6 +445,8 @@ function show(msg, ok=true){
 }
 
 })();
+
+
 </script>
 
 </body>

@@ -1,10 +1,15 @@
 <?php
 require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 if (!isLoggedIn()) {
     header('Location: ../../Index.php');
     exit;
 }
+
 
 date_default_timezone_set("Asia/Jakarta");
 
@@ -15,6 +20,7 @@ $search = $_GET['search'] ?? '';
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $limit  = max(1, min(100, (int)($_GET['limit'] ?? 10)));
 $offset = ($page - 1) * $limit;
+
 
 /* ================= QUERY ================= */
 $sql = "
@@ -75,6 +81,11 @@ $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (isset($_GET['excel']) && $_GET['excel'] == 1) {
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit;
+}
 
 /* ================= TOTAL ================= */
 $total_sql = "SELECT COUNT(*) FROM transaksi t 
@@ -106,7 +117,7 @@ if ($search != '') {
 }
 
 $total_stmt = $pdo->prepare($total_sql);
-foreach ($total_params ?? $params as $k => $v) {
+foreach ($params as $k => $v) {
     $total_stmt->bindValue($k, $v);
 }
 $total_stmt->execute();
@@ -166,52 +177,181 @@ $totals = $sum_stmt->fetch(PDO::FETCH_ASSOC) ?: ['b' => 0, 't' => 0, 'n' => 0];
 <title>Laporan</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-body{background:#eef2f7;font-size:13px}
-.wrapper{padding:15px}
-.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
-h3{margin-bottom:12px}
-
-.filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
-.filter-group{display:flex;gap:6px}
-
-input,select{
-padding:7px 10px;
-border:1px solid #d1d5db;
-border-radius:8px;
-font-size:12px;
+/* ================= RESET KHUSUS WRAPPER ================= */
+.wrapper *{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI', sans-serif;
 }
 
+/* ================= WRAPPER ================= */
+.wrapper{
+    width:100%;
+    max-width:100%;
+    padding:15px;
+    background:#eef2f7;
+    font-size:13px;
+}
+
+/* ================= CARD ================= */
+.card{
+    width:100%;
+    background:#fff;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 6px 20px rgba(0,0,0,.08);
+}
+
+/* ================= TITLE ================= */
+.wrapper h3{
+    margin-bottom:12px;
+    font-size:16px;
+    font-weight:600;
+}
+
+/* ================= FILTER ================= */
+.filter-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.filter-group{
+    display:flex;
+    gap:6px;
+    align-items:center;
+}
+
+/* ================= INPUT ================= */
+.wrapper input,
+.wrapper select{
+    padding:7px 10px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    font-size:12px;
+    outline:none;
+}
+
+.wrapper input:focus,
+.wrapper select:focus{
+    border-color:#2563eb;
+}
+
+/* ================= BUTTON ================= */
 .btn{
-padding:7px 12px;
-border:none;
-border-radius:8px;
-cursor:pointer;
+    padding:7px 12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:12px;
+    transition:0.2s;
+}
+
+.btn:hover{
+    opacity:0.9;
 }
 
 .primary{background:#2563eb;color:#fff}
 .dark{background:#111827;color:#fff}
 .success{background:#16a34a;color:#fff}
 
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#111827;color:#fff;padding:8px}
-td{padding:7px;border-bottom:1px solid #ddd;text-align:center}
-tr:hover{background:#f1f5f9}
-
-.summary{margin:10px 0;font-weight:600}
-
-.pagination{text-align:center;margin-top:10px}
-.pagination a{
-padding:5px 9px;
-background:#e5e7eb;
-margin:2px;
-text-decoration:none;
-border-radius:6px;
+/* ================= TABLE ================= */
+.wrapper table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
 }
-.pagination .active{background:#2563eb;color:#fff}
 
+.wrapper th{
+    background:#111827;
+    color:#fff;
+    padding:8px;
+    text-align:center;
+}
+
+.wrapper td{
+    padding:7px;
+    border-bottom:1px solid #ddd;
+    text-align:center;
+}
+
+.wrapper tr:hover{
+    background:#f1f5f9;
+}
+
+/* ================= SUMMARY ================= */
+.summary{
+    margin:10px 0;
+    font-weight:600;
+}
+
+/* ================= PAGINATION ================= */
+.pagination{
+    text-align:center;
+    margin-top:10px;
+}
+
+.pagination a{
+    padding:5px 9px;
+    background:#e5e7eb;
+    margin:2px;
+    text-decoration:none;
+    border-radius:6px;
+    color:#000;
+    font-size:12px;
+}
+
+.pagination a:hover{
+    background:#d1d5db;
+}
+
+.pagination .active{
+    background:#2563eb;
+    color:#fff;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width:768px){
+
+    .filter-bar{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .filter-group{
+        width:100%;
+        flex-wrap:wrap;
+    }
+
+    .wrapper table{
+        font-size:11px;
+    }
+
+    .wrapper th,
+    .wrapper td{
+        padding:6px;
+    }
+}
+
+/* ================= PRINT ================= */
 @media print{
-.filter-bar,.pagination,.btn{display:none}
+    .filter-bar,
+    .pagination,
+    .btn{
+        display:none;
+    }
+
+    .wrapper{
+        padding:0;
+        background:#fff;
+    }
+
+    .card{
+        box-shadow:none;
+        padding:0;
+    }
 }
 </style>
 </head>
@@ -247,6 +387,13 @@ border-radius:6px;
 </div>
 
 <div class="filter-group">
+<select id="export_limit">
+<option value="10">10 Data</option>
+<option value="25">25 Data</option>
+<option value="50">50 Data</option>
+<option value="all">Semua</option>
+</select>
+
 <select id="print_limit">
 <option value="10">10 Data</option>
 <option value="25">25 Data</option>
@@ -254,7 +401,11 @@ border-radius:6px;
 <option value="all">Semua</option>
 </select>
 
-<button class="btn success" onclick="printData()">Print</button>
+
+<button class="btn primary" onclick="exportPDF()">📄 PDF</button>
+<button class="btn dark" onclick="exportWord()">📝 Word</button>
+<button class="btn success" onclick="exportExcel()">📊 Excel</button>
+<button class="btn" onclick="printData()">🖨️ Print</button>
 </div>
 
 </div>
@@ -302,6 +453,8 @@ Netto: <?= number_format($totals['n']/1000,2) ?> Ton
 <div class="pagination">
 <?php for($i=1;$i<=$totalPages;$i++): ?>
 <a href="javascript:void(0)" onclick="loadTable(<?= $i ?>)" class="<?= $page==$i?'active':'' ?>">
+<?= $i ?>
+</a>
 <?php endfor; ?>
 </div>
 
@@ -345,6 +498,13 @@ document.getElementById('search').value='';
 loadTable(1);
 }
 
+/* ===============================
+   GANTI SEMUA FUNCTION EXPORT
+   Penyebab NOT FOUND:
+   karena path ../Laporan/ dipanggil dari URL yang sudah berada di Dashboard
+   Jadi harus absolute dari root project
+================================= */
+
 function printData(){
 let d = document.getElementById('dari').value;
 let s = document.getElementById('sampai').value;
@@ -353,14 +513,66 @@ let l = document.getElementById('print_limit').value;
 
 let iframe = document.createElement('iframe');
 iframe.style.display = 'none';
-iframe.src = `sidebar/../Laporan/Struktur.php?dari=${d}&sampai=${s}&search=${q}&limit=${l}`;
+
+/* FIX */
+iframe.src = `/Project_3/Dasboard/Laporan/Struktur.php?dari=${d}&sampai=${s}&search=${q}&limit=${l}`;
 
 document.body.appendChild(iframe);
 
 iframe.onload = function(){
     iframe.contentWindow.print();
-    setTimeout(() => document.body.removeChild(iframe), 1000);
 };
+}
+
+
+function exportPDF(){
+let d = document.getElementById('dari').value;
+let s = document.getElementById('sampai').value;
+let q = document.getElementById('search').value;
+let l = document.getElementById('export_limit').value;
+
+/* FIX */
+window.open(`/Project_3/Dasboard/Laporan/laporan_pdf.php?dari=${d}&sampai=${s}&search=${q}&limit=${l}`, '_blank');
+}
+
+
+function exportWord(){
+let d = document.getElementById('dari').value;
+let s = document.getElementById('sampai').value;
+let q = document.getElementById('search').value;
+let l = document.getElementById('export_limit').value;
+
+/* FIX */
+window.location.href = `/Project_3/Dasboard/Laporan/laporan_word.php?dari=${d}&sampai=${s}&search=${q}&limit=${l}`;
+}
+
+
+function exportExcel(){
+let d = document.getElementById('dari').value;
+let s = document.getElementById('sampai').value;
+let q = document.getElementById('search').value;
+
+fetch(`/Project_3/Dasboard/sidebar/Laporan.php?dari=${d}&sampai=${s}&search=${q}&limit=100&excel=1`)
+.then(res => res.json())
+.then(rows => {
+
+    if(typeof XLSX === 'undefined'){
+        let script = document.createElement('script');
+        script.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        script.onload = ()=>buatExcel(rows);
+        document.head.appendChild(script);
+    }else{
+        buatExcel(rows);
+    }
+
+});
+}
+
+function buatExcel(rows){
+let wb = XLSX.utils.book_new();
+let ws = XLSX.utils.json_to_sheet(rows);
+XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
+XLSX.writeFile(wb, 'laporan.xlsx');
 }
 
 </script>

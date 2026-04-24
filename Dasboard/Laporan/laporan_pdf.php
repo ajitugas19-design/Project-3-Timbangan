@@ -1,5 +1,10 @@
 <?php
-require_once '../../config.php';
+require_once __DIR__ . '/../../config.php';
+
+if (!isLoggedIn()) {
+    header('Location: ../../Index.php');
+    exit;
+}
 
 date_default_timezone_set("Asia/Jakarta");
 
@@ -108,36 +113,41 @@ foreach ($params as $k => $v) {
 }
 $total_stmt->execute();
 
-$totals = $total_stmt->fetch(PDO::FETCH_ASSOC);
+$totals = $total_stmt->fetch(PDO::FETCH_ASSOC) ?: [
+    'total_bruto' => 0,
+    'total_tara' => 0,
+    'total_netto' => 0
+];
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Laporan Timbangan</title>
+<title>Laporan PDF</title>
 
 <style>
 body{
     font-family:Arial, sans-serif;
     font-size:11px;
+    margin:15px;
     color:#000;
-    margin:20px;
 }
 
 .header{
     text-align:center;
-    margin-bottom:15px;
+    margin-bottom:10px;
 }
 
 .header h2{
     margin:0;
     font-size:20px;
+    letter-spacing:1px;
 }
 
 .header p{
-    margin:3px 0;
-    font-size:12px;
+    margin:2px 0;
+    font-size:11px;
 }
 
 .info{
@@ -161,15 +171,15 @@ th,td{
 }
 
 th{
-    background:#e9ecef;
-    font-size:11px;
+    background:#eaeaea;
+    font-size:10px;
 }
 
-td.text-left{
+.left{
     text-align:left;
 }
 
-td.text-right{
+.right{
     text-align:right;
 }
 
@@ -179,27 +189,24 @@ td.text-right{
 
 tfoot td{
     font-weight:bold;
-    background:#f1f1f1;
+    background:#f3f3f3;
 }
 
 .signature{
-    margin-top:40px;
     width:100%;
+    margin-top:40px;
 }
 
 .signature td{
     border:none;
     text-align:center;
     padding-top:40px;
+    font-size:12px;
 }
 
 @media print{
     body{
         margin:10px;
-    }
-
-    .no-print{
-        display:none;
     }
 }
 </style>
@@ -210,7 +217,11 @@ tfoot td{
 <div class="header">
     <h2>LAPORAN TRANSAKSI TIMBANGAN</h2>
     <p>Periode : <?= $dari ?: '-' ?> s/d <?= $sampai ?: '-' ?></p>
-    <p>Filter : <?= $search ?: '-' ?> | Jumlah Data : <?= count($data) ?></p>
+    <p>Filter : <?= $search ?: '-' ?></p>
+</div>
+
+<div class="info">
+Jumlah Data : <?= count($data) ?>
 </div>
 
 <table>
@@ -238,28 +249,28 @@ tfoot td{
 <tr>
     <td><?= $no++ ?></td>
     <td><?= $d['no_record'] ?></td>
-    <td class="text-left"><?= $d['Sopir'] ?></td>
+    <td class="left"><?= $d['Sopir'] ?></td>
     <td><?= $d['Nopol'] ?></td>
-    <td class="text-left"><?= $d['Nama_Supplier'] ?></td>
-    <td class="text-left"><?= $d['Material'] ?></td>
-    <td class="text-left"><?= $d['Customers'] ?></td>
+    <td class="left"><?= $d['Nama_Supplier'] ?></td>
+    <td class="left"><?= $d['Material'] ?></td>
+    <td class="left"><?= $d['Customers'] ?></td>
     <td><?= $d['jam_in'] ?></td>
     <td><?= $d['tgl_in'] ?></td>
     <td><?= $d['jam_out'] ?></td>
     <td><?= $d['tgl_out'] ?></td>
-    <td class="text-right"><?= number_format($d['bruto']) ?></td>
-    <td class="text-right"><?= number_format($d['tara']) ?></td>
-    <td class="text-right netto"><?= number_format($d['netto']/1000,2) ?> T</td>
+    <td class="right"><?= number_format($d['bruto']) ?></td>
+    <td class="right"><?= number_format($d['tara']) ?></td>
+    <td class="right netto"><?= number_format($d['netto']/1000,2) ?> T</td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 
 <tfoot>
 <tr>
-    <td colspan="11" class="text-right">TOTAL</td>
-    <td class="text-right"><?= number_format($totals['total_bruto']) ?></td>
-    <td class="text-right"><?= number_format($totals['total_tara']) ?></td>
-    <td class="text-right"><?= number_format($totals['total_netto']/1000,2) ?> T</td>
+    <td colspan="11" class="right">TOTAL</td>
+    <td class="right"><?= number_format($totals['total_bruto']) ?></td>
+    <td class="right"><?= number_format($totals['total_tara']) ?></td>
+    <td class="right netto"><?= number_format($totals['total_netto']/1000,2) ?> T</td>
 </tr>
 </tfoot>
 </table>
