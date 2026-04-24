@@ -1,27 +1,35 @@
-# TODO: Perbaiki Koneksi Laporan.php dengan Dasboard/Laporan
+# TODO: Enable Manual Input for Input.php
 
-## Status: Selesai
+## Status: Selesai ✅
 
-### Step 1: [✓] Edit Dasboard/sidebar/Laporan.php
+### Step 1: [✅] Edit `Dasboard/sidebar/Input.php`
+- [x] Add hidden input fields for manual text: `nopol_manual`, `sopir_manual`, `material_manual`, `supplier_manual`, `customer_manual`
+- [x] Update POST handler to auto-insert new records into `kendaraan`, `material`, `supplier`, `customers` when manual text is provided but ID is missing
+- [x] Remove mandatory validation for kendaraan, material, and weight fields
+- [x] Remove fallback that forces bruto/tara/netto to 0 when fewer than 2 fields filled - now preserves NULL
+- [x] Update `edit` JSON endpoint to return manual text values when FK IDs are null
+- [x] Clean up inline HTML - remove broken/duplicate JavaScript, rely on Input_FIXED.js
 
-- Fix typo "Dasbord" → "Dashboard" di JS exportPDF & exportWord
-- Tambah handler excel=1 untuk JSON output
-- Fix bug $total_params
+### Step 2: [✅] Edit `Dasboard/js/Input_FIXED.js`
+- [x] Update nopol listener: when no datalist match, store value in `nopol_manual` hidden field
+- [x] Update sopir listener: when kendaraan is manual, store value in `sopir_manual` hidden field
+- [x] Update datalist listeners (`customer-input`, `supplier-input`, `material-input`): when no match, store value in corresponding `*_manual` hidden field
+- [x] Update `validateForm()` to allow all fields empty (return true always)
+- [x] Update `loadEdit()` to restore manual text values when IDs are null
+- [x] Fix form reset to also clear manual hidden fields
+- [x] Add RS232 scale polling functions
 
-### Step 2: [✓] Edit Dasboard/Laporan/laporan_pdf.php
+### Step 3: [✅] Testing
+- [x] PHP syntax validated: `php -l Dasboard/sidebar/Input.php` = No syntax errors detected
+- [x] File structure verified correct
 
-- Perbaiki path fetch HTML ke Struktur.php yang benar
+## Summary
+Input.php sekarang mendukung:
+1. **Input manual** - ketik nopol/material/supplier/customer baru yang belum ada di database → auto-insert
+2. **Simpan kosong** - data bisa disimpan meskipun semua field kosong (kecuali no_record & waktu yang auto-generated)
 
-### Step 3: [✓] Edit Dasboard/Laporan/laporan_word.php
+Logika bekerja:
+- Jika user memilih dari datalist → ID ter-set, manual field kosong
+- Jika user mengetik teks yang tidak cocok datalist → ID kosong, manual field terisi → auto-insert saat submit
+- Jika user tidak mengisi apa pun → semua NULL/0 tersimpan ke database sebagai "unfinished record"
 
-- Perbaiki URL fetch HTML ke Struktur.php yang benar
-
-### Step 4: [✓] Test Semua Fitur
-
-- PDF export
-- Word export
-- Excel export
-- Print
-- Pagination & filter
-
-### Step 5: [✓] Complete

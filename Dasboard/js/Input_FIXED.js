@@ -18,7 +18,7 @@
     const form = document.querySelector("form");
     const submitBtn = form.querySelector('button[type="submit"]');
 
-    // 1. NoPol -> ID + Sopir
+    // 1. NoPol -> ID + Sopir + Manual detection
     document.getElementById("nopol").addEventListener("input", (e) => {
       const val = e.target.value;
       const opt = Array.from(
@@ -26,14 +26,28 @@
       ).find((o) => o.value === val);
       const idField = document.getElementById("id_kendaraan");
       const sopirField = document.getElementById("sopir");
+      const nopolManual = document.getElementById("nopol_manual");
+      const sopirManual = document.getElementById("sopir_manual");
 
       if (opt) {
         idField.value = opt.dataset.id;
         sopirField.value = opt.dataset.sopir || "";
         sopirField.title = "Auto dari DB";
+        nopolManual.value = "";
+        sopirManual.value = "";
       } else {
         idField.value = "";
         sopirField.title = "Manual";
+        nopolManual.value = val;
+        sopirManual.value = sopirField.value;
+      }
+    });
+
+    // Sopir manual tracking
+    document.getElementById("sopir").addEventListener("input", (e) => {
+      const nopolManual = document.getElementById("nopol_manual");
+      if (nopolManual.value) {
+        document.getElementById("sopir_manual").value = e.target.value;
       }
     });
 
@@ -43,57 +57,55 @@
         const inputId =
           id === "cek_customer" ? "customer-input" : "supplier-input";
         const hiddenId = id === "cek_customer" ? "id_customers" : "id_supplier";
+        const manualId = id === "cek_customer" ? "customer_manual" : "supplier_manual";
         const input = document.getElementById(inputId);
         input.style.display = e.target.checked ? "block" : "none";
         if (!e.target.checked) {
           input.value = "";
           document.getElementById(hiddenId).value = "";
+          document.getElementById(manualId).value = "";
         } else {
           input.focus();
         }
       });
     });
 
-    // 3. Datalist auto ID
+    // 3. Datalist auto ID + Manual detection
     ["customer-input", "supplier-input", "material-input"].forEach(
       (inputId) => {
         const input = document.getElementById(inputId);
         const datalistId = inputId.replace("-input", "-list");
 
         let hiddenId = "";
-        if (inputId === "customer-input") hiddenId = "id_customers";
-        if (inputId === "supplier-input") hiddenId = "id_supplier";
-        if (inputId === "material-input") hiddenId = "id_material";
+        let manualId = "";
+        if (inputId === "customer-input") {
+          hiddenId = "id_customers";
+          manualId = "customer_manual";
+        }
+        if (inputId === "supplier-input") {
+          hiddenId = "id_supplier";
+          manualId = "supplier_manual";
+        }
+        if (inputId === "material-input") {
+          hiddenId = "id_material";
+          manualId = "material_manual";
+        }
 
         input.addEventListener("input", (e) => {
           const val = e.target.value;
-          console.log(`Material input: "${val}"`);
-
           const options = Array.from(
             document.querySelectorAll(`#${datalistId} option`),
           );
-          console.log(
-            "Available options:",
-            options.map((o) => `'${o.value}' (${o.dataset.id})`).join(", "),
-          );
-
-          const opt = options.find(
-            (o) =>
-              o.value.trim() === val.trim() ||
-              o.value.toLowerCase().includes(val.toLowerCase()),
-          );
-
-          console.log(
-            "Found opt:",
-            opt ? opt.value + " ID=" + opt.dataset.id : "NO MATCH",
-          );
+          const opt = options.find((o) => o.value.trim() === val.trim());
 
           if (opt) {
             document.getElementById(hiddenId).value = opt.dataset.id;
-            console.log("✅ SET ID:", opt.dataset.id);
+            document.getElementById(manualId).value = "";
+            console.log(`✅ ${inputId} SET ID:`, opt.dataset.id);
           } else {
             document.getElementById(hiddenId).value = "";
-            console.log("❌ NO ID SET");
+            document.getElementById(manualId).value = val;
+            console.log(`❌ ${inputId} NO MATCH - manual:`, val);
           }
         });
       },
@@ -114,6 +126,7 @@
     };
 
     window.validateForm = () => {
+      // Allow saving with empty fields - all fields are optional
       return true;
     };
 
@@ -134,9 +147,72 @@
           el.value = data[id] || "";
         });
 
-        document.getElementById("nopol").value = data.Nopol || "";
-        // Trigger nopol input
+        // Handle nopol - could be DB-linked or manual
+        if (data.id_kendaraan) {
+          document.getElementById("nopol").value = data.Nopol || "";
+          document.getElementById("id_kendaraan").value = data.id_kendaraan;
+          document.getElementById("nopol_manual").value = "";
+        } else if (data.Nopol) {
+          document.getElementById("nopol").value = data.Nopol;
+          document.getElementById("id_kendaraan").value = "";
+          document.getElementById("nopol_manual").value = data.Nopol;
+        }
+
+        document.getElementById("sopir").value = data.Sopir || "";
+        document.getElementById("sopir_manual").value = data.Sopir || "";
+
+        // Trigger nopol input to set states properly
         document.getElementById("nopol").dispatchEvent(new Event("input"));
+
+        // Handle material
+        if (data.id_material) {
+          document.getElementById("material-input").value = data.Material || "";
+          document.getElementById("id_material").value = data.id_material;
+          document.getElementById("material_manual").value = "";
+        } else if (data.Material) {
+          document.getElementById("material-input").value = data.Material;
+          document.getElementById("id_material").value = "";
+          document.getElementById("material_manual").value = data.Material;
+        }
+
+        // Handle customer
+        if (data.id_customers) {
+          document.getElementById("cek_customer").checked = true;
+          const customerInput = document.getElementById("customer-input");
+          customerInput.style.display = "block";
+          customerInput.value = data.Customers || "";
+          document.getElementById("id_customers").value = data.id_customers;
+          document.getElementById("customer_manual").value = "";
+        } else if (data.Customers) {
+          document.getElementById("cek_customer").checked = true;
+          const customerInput = document.getElementById("customer-input");
+          customerInput.style.display = "block";
+          customerInput.value = data.Customers;
+          document.getElementById("id_customers").value = "";
+          document.getElementById("customer_manual").value = data.Customers;
+        }
+
+        // Handle supplier
+        if (data.id_supplier) {
+          document.getElementById("cek_supplier").checked = true;
+          const supplierInput = document.getElementById("supplier-input");
+          supplierInput.style.display = "block";
+          supplierInput.value = data.Nama_Supplier || "";
+          document.getElementById("id_supplier").value = data.id_supplier;
+          document.getElementById("supplier_manual").value = "";
+        } else if (data.Nama_Supplier) {
+          document.getElementById("cek_supplier").checked = true;
+          const supplierInput = document.getElementById("supplier-input");
+          supplierInput.style.display = "block";
+          supplierInput.value = data.Nama_Supplier;
+          document.getElementById("id_supplier").value = "";
+          document.getElementById("supplier_manual").value = data.Nama_Supplier;
+        }
+
+        document.getElementById("tgl_masuk").value = data.tgl_masuk || "";
+        document.getElementById("jam_masuk").value = data.jam_in || "";
+        document.getElementById("tgl_keluar").value = data.tgl_keluar || "";
+        document.getElementById("jam_keluar").value = data.jam_out || "";
 
         window.calculate();
         showToast("Data loaded ✅");
@@ -186,6 +262,13 @@
 
         if (result.success) {
           form.reset();
+          // Reset manual hidden fields
+          ["nopol_manual", "sopir_manual", "material_manual", "supplier_manual", "customer_manual"].forEach(
+            (id) => (document.getElementById(id).value = "")
+          );
+          // Reset checkbox displays
+          document.getElementById("customer-input").style.display = "none";
+          document.getElementById("supplier-input").style.display = "none";
           window.loadUnfinished();
         }
       } catch (e) {
@@ -215,6 +298,98 @@
       }, 4000);
     };
 
+    // 7. RS232 Scale Polling
+    let pollInterval;
+
+    window.startPolling = () => {
+      if (pollInterval) clearInterval(pollInterval);
+
+      pollInterval = setInterval(async () => {
+        try {
+          const baseUrl = window.CURRENT_BASE_PATH || "./";
+          const apiUrl = `${baseUrl}api/scale_logs.php`;
+
+          const weightRes = await fetch(`${apiUrl}?action=latest_weight`);
+          const weightData = await weightRes.json();
+          if (weightData.parsed_weight !== null) {
+            const lw = document.getElementById("latestWeight");
+            if (lw) lw.textContent = weightData.parsed_weight.toFixed(2);
+            const st = document.getElementById("scaleTime");
+            if (st) st.textContent = new Date(weightData.timestamp).toLocaleString();
+            const ss = document.getElementById("scaleStatus");
+            if (ss) {
+              ss.textContent = "🟢 Live";
+              ss.style.color = "green";
+            }
+          }
+
+          window.refreshLogs && window.refreshLogs();
+        } catch (e) {
+          const ss = document.getElementById("scaleStatus");
+          if (ss) {
+            ss.textContent = "🔴 Offline";
+            ss.style.color = "red";
+          }
+        }
+      }, 3000);
+
+      window.refreshLogs && window.refreshLogs();
+    };
+
+    window.refreshLogs = async () => {
+      try {
+        const baseUrl = window.CURRENT_BASE_PATH || "./";
+        const res = await fetch(`${baseUrl}api/scale_logs.php?action=logs&limit=20`);
+        const logs = await res.json();
+
+        const table = document.getElementById("logsTable");
+        if (!table) return;
+
+        if (logs.length === 0) {
+          table.innerHTML = "<em>No logs. Run: python penimbangan.py</em>";
+          return;
+        }
+
+        table.innerHTML = logs
+          .map(
+            (log) => `
+            <div style="padding:2px 0;border-bottom:1px solid #eee;">
+                <strong>${log.parsed_weight?.toFixed(2) || "ERR"}kg</strong>
+                <span style="color:#666;font-size:0.8em;">${new Date(log.timestamp).toLocaleTimeString()}</span>
+                <span style="float:right;color:${log.status === "success" ? "green" : log.status === "error" ? "red" : "orange"}">[${log.status}]</span>
+                <br><small>${log.raw_data?.substring(0, 50) || "N/A"}...</small>
+            </div>
+        `,
+          )
+          .reverse()
+          .join("");
+      } catch (e) {
+        console.error("Logs error:", e);
+      }
+    };
+
+    window.useLatestWeight = () => {
+      const weightEl = document.getElementById("latestWeight");
+      const weight = parseFloat(weightEl.textContent);
+      if (!isNaN(weight)) {
+        document.getElementById("bruto").value = weight.toFixed(2);
+        const bs = document.getElementById("brutoSource");
+        if (bs) {
+          bs.textContent = "(scale)";
+          bs.style.color = "#1976d2";
+        }
+        window.calculate();
+        showToast("✅ Bruto dari scale!");
+      } else {
+        showToast("No weight available", false);
+      }
+    };
+
+    // Start polling if scale elements exist
+    if (document.getElementById("scaleStatus")) {
+      setTimeout(window.startPolling, 1000);
+    }
+
     // Auto load
     window.loadUnfinished();
   }
@@ -226,3 +401,4 @@
     init();
   }
 })();
+
