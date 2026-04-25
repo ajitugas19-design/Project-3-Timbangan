@@ -67,194 +67,25 @@ $data = $pdo->query("SELECT * FROM kendaraan ORDER BY id_Kendaraan DESC")->fetch
 <title>Kendaraan</title>
 
 <style>
-/* CSS KENDARAAN - TABEL LURUS & RAPIH */
-:root{
-  --primary:#3b82f6;
-  --success:#10b981;
-  --warning:#f59e0b;
-  --danger:#ef4444;
-  --dark:#1f2937;
-  --light:#f3f4f6;
-  --shadow:0 4px 6px rgba(0,0,0,.1);
-}
-
-/* BUTTON */
-.btn{
-  background:#3b82f6;
-  color:#fff;
-  padding:10px 18px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
-}
-
-.btn-warning{ background:#f59e0b; }
-.btn-danger{ background:#ef4444; }
-.btn-success{ background:#10b981; }
-
-/* TABLE */
-.table-container{
-  background:#fff;
-  border-radius:12px;
-  overflow-x:auto;
-  margin-top:20px;
-  box-shadow:var(--shadow);
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  table-layout:fixed; /* bikin semua kolom sejajar */
-}
-
-thead{
-  background:#1f2937;
-  color:#fff;
-}
-
-th{
-  padding:14px 12px;
-  font-size:14px;
-  text-align:center;
-}
-
-td{
-  padding:12px;
-  font-size:14px;
-  border-bottom:1px solid #eee;
-  vertical-align:middle;
-  word-wrap:break-word;
-}
-
-/* UKURAN KOLOM */
-th:nth-child(1),
-td:nth-child(1){
-  width:60px;
-  text-align:center;
-}
-
-th:nth-child(2),
-td:nth-child(2){
-  width:220px;
-  text-align:center;
-}
-
-th:nth-child(3),
-td:nth-child(3){
-  text-align:left;
-}
-
-th:nth-child(4),
-td:nth-child(4){
-  width:180px;
-  text-align:center;
-}
-
-/* HOVER */
-tbody tr:hover{
-  background:#f9fafb;
-}
-
-/* BUTTON ACTION */
-.edit,
-.hapus{
-  border:none;
-  padding:8px 14px;
-  border-radius:8px;
-  color:#fff;
-  cursor:pointer;
-  font-size:13px;
-  margin:2px;
-}
-
-.edit{ background:#f59e0b; }
-.hapus{ background:#ef4444; }
-
-/* FORM */
-.form-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100vh;
-  background:rgba(0,0,0,.5);
-  display:none;
-  z-index:1000;
-}
-
-.form-overlay.active{
-  display:block;
-}
-
-.form-slide{
-  position:fixed;
-  right:-350px;
-  top:0;
-  width:350px;
-  height:100vh;
-  background:#fff;
-  padding:24px;
-  transition:.3s;
-  z-index:1001;
-  box-shadow:-4px 0 20px rgba(0,0,0,.15);
-  overflow-y:auto;
-}
-
-.form-slide.active{
-  right:0;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin-bottom:15px;
-  border:1px solid #ddd;
-  border-radius:6px;
-  box-sizing:border-box;
-}
-
-.btn-save{
-  width:100%;
-  background:#10b981;
-  color:#fff;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-}
-
-.btn-cancel{
-  width:100%;
-  background:#ef4444;
-  color:#fff;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  margin-top:10px;
-}
-
-/* MESSAGE */
-.message{
-  position:fixed;
-  top:20px;
-  right:20px;
-  padding:15px;
-  border-radius:10px;
-  color:#fff;
-  z-index:9999;
-}
-
-.success{ background:#10b981; }
-.error{ background:#ef4444; }
+/* Scoped: Kendaraan */
+.page-kendaraan th:nth-child(1),
+.page-kendaraan td:nth-child(1){ width:60px; text-align:center; }
+.page-kendaraan th:nth-child(2),
+.page-kendaraan td:nth-child(2){ width:220px; text-align:center; }
+.page-kendaraan th:nth-child(3),
+.page-kendaraan td:nth-child(3){ text-align:left; }
+.page-kendaraan th:nth-child(4),
+.page-kendaraan td:nth-child(4){ width:180px; text-align:center; }
 </style>
 </head>
 
 <body>
 
-<button class="btn" onclick="openAdd()"> + Tambah Kendaraan</button>
+<div class="page-kendaraan">
+<button class="btn btn-primary" onclick="openAdd()"> + Tambah Kendaraan</button>
 
 <div class="table-container">
-<table>
+<table class="data-table">
 <thead>
 <tr>
 <th>No</th>
@@ -271,11 +102,11 @@ input{
 <td><?= htmlspecialchars($d['Nopol']) ?></td>
 <td><?= htmlspecialchars($d['Sopir']) ?></td>
 <td>
-<button class="edit"
+<button class="edit-btn"
 onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'> EDIT </button>
 
-<button class="hapus"
-onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>)">HAPUS</button>
+<button class="delete-btn"
+onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>")>HAPUS</button>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -297,8 +128,9 @@ onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>)">HAPUS</button>
 <input type="text" name="sopir" id="sopir" placeholder="Sopir">
 
 <button type="submit" class="btn-save">Simpan</button>
-<button type="button" class="btn-cancel" onclick="closeForm()">Batal</button>
+<button type="button" class="btn-cancel-form" onclick="closeForm()">Batal</button>
 </form>
+</div>
 </div>
 
 <script>
@@ -392,9 +224,11 @@ function loadTable(){
 // ===== MESSAGE =====
 function show(msg, ok=true){
     let d=document.createElement('div');
-    d.className='message '+(ok?'success':'error');
+    d.className='message-toast '+(ok?'success':'error');
     d.innerText=msg;
     document.body.appendChild(d);
+    void d.offsetWidth;
+    d.classList.add('show');
     setTimeout(()=>d.remove(),3000);
 }
 
@@ -403,3 +237,4 @@ function show(msg, ok=true){
 
 </body>
 </html>
+

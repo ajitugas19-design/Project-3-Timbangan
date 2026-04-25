@@ -25,6 +25,7 @@ if (isset($_GET['logout'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Timbangan</title>
 <link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/components.css">
 <script src="js/dashboard.js" defer></script>
 <script>window.BASE_PATH = '<?= dirname($_SERVER['SCRIPT_NAME']) ?>';</script>
 </head>

@@ -124,73 +124,35 @@ $users = $pdo->query("SELECT * FROM user ORDER BY nama")->fetchAll(PDO::FETCH_AS
 <title>Manajemen User</title>
 
 <style>
-:root {
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --success: #10b981;
-  --dark: #374151;
-  --light: #f3f4f6;
-  --shadow: 0 4px 6px rgba(0,0,0,0.1);
-  --form-slide-width: 350px;
-}
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: var(--light);
-  margin: 0;
-  padding: 0px;
-}
-.container {
+/* Scoped: User */
+.page-user {
   max-width: 1000px;
   margin: 0 auto;
   background: white;
   border-radius: 12px;
   box-shadow: var(--shadow);
   overflow: hidden;
+  padding: 20px;
 }
-.btn {
-  background: var(--success);
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 500;
-}
-.btn:hover { opacity: 0.9; }
-.table-container {
-  margin-top: 20px;
-}
-table { width: 100%; border-collapse: collapse; }
-th { background: var(--dark); color: white; padding: 12px; text-align: left; }
-td { padding: 12px; border-bottom: 1px solid #eee; }
-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
-.action { display: flex; gap: 6px; }
-.edit { background: var(--warning); color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
-.hapus { background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
-.form-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); display: none; z-index: 1000; }
-.form-overlay.active { display: block; }
-.form-slide { position: fixed; right: calc(-1 * var(--form-slide-width)); top: 0; width: var(--form-slide-width); height: 100vh; background: white; padding: 24px; transition: right 0.3s ease; z-index: 1001; box-shadow: -4px 0 20px rgba(0,0,0,0.15); overflow-y: auto; }
-.form-slide.active { right: 0; }
-input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-.btn-save { background: var(--success); color: white; padding: 12px; width: 100%; border: none; border-radius: 8px; font-weight: 500; }
-.btn-cancel { background: #6b7280; color: white; padding: 12px; width: 100%; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; }
-.btn-cancel:hover { opacity: 0.9; }
 
-.message { position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 10px; color: white; font-weight: 500; transform: translateX(400px); transition: 0.3s; z-index: 2000; }
-.message.show { transform: translateX(0); }
-.message.success { background: var(--success); }
-.message.error { background: var(--danger); }
+.page-user img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+.page-user .action { display: flex; gap: 6px; }
+
+.page-user th:nth-child(1), .page-user td:nth-child(1){ width:70px; text-align:center; }
+.page-user th:nth-child(2), .page-user td:nth-child(2){ text-align:left; }
+.page-user th:nth-child(3), .page-user td:nth-child(3){ text-align:left; }
+.page-user th:nth-child(4), .page-user td:nth-child(4){ text-align:left; }
+.page-user th:nth-child(5), .page-user td:nth-child(5){ width:180px; text-align:center; }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-<h2>👥 Manajemen User</h2>
-<button class="btn" onclick="openAdd()">➕ Tambah User</button>
+<div class="page-user">
+<button class="btn btn-success" onclick="openAdd()"> Tambah User </button>
 
 <div class="table-container">
-<table>
+<table class="data-table">
 <thead>
 <tr>
 <th>Foto</th>
@@ -209,8 +171,8 @@ input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; borde
 <td><?= htmlspecialchars($u['sebagai'] ?? '-') ?></td>
 <td>
 <div class="action">
-<button class="edit" onclick='openEdit(<?= json_encode($u) ?>)'>✏️ Edit</button>
-<button class="hapus" onclick="hapus(<?= $u['id_user'] ?>)">🗑️ Hapus</button>
+<button class="edit-btn" onclick='openEdit(<?= json_encode($u) ?>)'> Edit</button>
+<button class="delete-btn" onclick="hapus(<?= $u['id_user'] ?>")> Hapus</button>
 </div>
 </td>
 </tr>
@@ -237,7 +199,7 @@ input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; borde
 <textarea name="keterangan" id="ket" placeholder="Keterangan"></textarea>
 
 <button type="submit" class="btn-save">💾 Simpan</button>
-<button type="button" class="btn-cancel" onclick="closeForm()">✖️ Batal</button>
+<button type="button" class="btn-cancel-form" onclick="closeForm()">✖️ Batal</button>
 
 </form>
 </div>
@@ -332,7 +294,7 @@ function loadTable() {
 // ===== NOTIFICATION =====
 function show(msg, success = true) {
     let div = document.createElement('div');
-    div.className = `message ${success ? 'success' : 'error'} show`;
+    div.className = `message-toast ${success ? 'success' : 'error'} show`;
     div.textContent = msg;
     document.body.appendChild(div);
     setTimeout(() => div.remove(), 3000);

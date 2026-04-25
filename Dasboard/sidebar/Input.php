@@ -176,26 +176,26 @@ if (isset($_GET['edit']) && isLoggedIn()) {
 <head>
 <title>Input Timbangan - Manual Support</title>
 <style>
-.container {max-width:1100px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
-.grid {display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-label {font-weight:bold;display:block;margin:5px 0;}
-input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;box-sizing:border-box;}
-.btn {padding:12px 24px;background:#28a745;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;}
-.message {padding:15px;margin:10px 0;border-radius:5px;}
-.success {background:#d4edda;color:#155724;}
-.error {background:#f8d7da;color:#721c24;}
-.box {display:flex;gap:10px;}
-.box > div {flex:1;}
-.center {text-align:center;}
-.toast {position:fixed;top:20px;right:20px;padding:15px;border-radius:8px;color:white;z-index:10000;max-width:300px;box-shadow:0 4px 12px rgba(0,0,0,0.3);transform:translateX(400px);transition:0.3s;}
-.toast.show {transform:translateX(0);}
-.toast.success {background:#10b981;}
-.toast.error {background:#ef4444;}
-.spinner {opacity:0.5;pointer-events:none;}
+/* Scoped: Input */
+.page-input {max-width:1100px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
+.page-input .grid {display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.page-input label {font-weight:bold;display:block;margin:5px 0;}
+.page-input input:not([type="checkbox"]),
+.page-input select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;box-sizing:border-box;}
+.page-input .box {display:flex;gap:10px;}
+.page-input .box > div {flex:1;}
+.page-input .center {text-align:center;}
+.page-input .spinner {opacity:0.5;pointer-events:none;}
+
+/* Panel timbangan spesifik */
+.page-input .scale-panel {border:2px solid #28a745;border-radius:8px;padding:15px;margin-bottom:15px;background:#f8fff8;}
+.page-input .scale-panel h3 {margin-top:0;color:#28a745;font-size:1.1em;}
+.page-input .scale-display {font-size:2em;font-weight:bold;color:#1976d2;text-align:center;padding:10px;background:#e3f2fd;border-radius:5px;margin-bottom:10px;}
+.page-input .scale-logs {max-height:150px;overflow-y:auto;font-size:0.85em;border:1px solid #ddd;border-radius:5px;padding:8px;background:#fff;}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="page-input">
 
 <form method="POST">
 <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
@@ -222,7 +222,8 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input type="hidden" name="sopir_manual" id="sopir_manual">
 
 <label>Customer</label>
-<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_customer" name="cek_customer"> Aktifkan</label>
+<h>Click Centang Kalau Ada Customers</h>
+<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_customer" name="cek_customer"></label>
 <input id="customer-input" list="customer-list" style="display:none;width:100%;" placeholder="Pilih atau ketik nama customer">
 <datalist id="customer-list">
 <?php foreach($customers as $c): ?>
@@ -233,7 +234,8 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input type="hidden" name="customer_manual" id="customer_manual">
 
 <label>Supplier</label>
-<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_supplier" name="cek_supplier"> Aktifkan</label>
+<h>Click Centang Kalau Ada Supplier</h>
+<label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="cek_supplier" name="cek_supplier"></label>
 <input id="supplier-input" list="supplier-list" style="display:none;width:100%;" placeholder="Pilih atau ketik nama supplier">
 <datalist id="supplier-list">
 <?php foreach($suppliers as $s): ?>
@@ -254,6 +256,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <input type="hidden" name="material_manual" id="material_manual">
 
 <br><br>
+<hr></hr>
 <label>Tanggal Masuk</label>
 <input type="date" name="tgl_masuk" id="tgl_masuk" value="<?= date('Y-m-d') ?>">
 <label>Jam Masuk</label>
@@ -261,7 +264,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 
 <div>
-<label>Edit Data</label>
+<label>Timbang 2X</label>
 <select id="edit_select" onchange="loadEdit()" style="background:#fef3c7;">
 <option value="">-- Pilih Data --</option>
 <?php foreach($unfinished as $u): ?>
@@ -271,17 +274,17 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 <br><br>
 
 <!-- Panel Timbangan RS232 -->
-<div style="border:2px solid #28a745;border-radius:8px;padding:15px;margin-bottom:15px;background:#f8fff8;">
-  <h3 style="margin-top:0;color:#28a745;font-size:1.1em;">📟 Timbangan Digital (RS232)</h3>
+<div class="scale-panel">
+  <h3>📟 Timbangan Digital (RS232)</h3>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
     <span id="scaleStatus" style="font-weight:bold;">⚪ Menghubungkan...</span>
     <span id="scaleTime" style="font-size:0.85em;color:#666;"></span>
   </div>
-  <div style="font-size:2em;font-weight:bold;color:#1976d2;text-align:center;padding:10px;background:#e3f2fd;border-radius:5px;margin-bottom:10px;">
+  <div class="scale-display">
     <span id="latestWeight">--</span> <span style="font-size:0.5em;color:#666;">kg</span>
   </div>
-  <button type="button" class="btn" onclick="useLatestWeight()" style="width:100%;margin-bottom:10px;background:#1976d2;">🔄 Ambil ke Bruto</button>
-  <div id="logsTable" style="max-height:150px;overflow-y:auto;font-size:0.85em;border:1px solid #ddd;border-radius:5px;padding:8px;background:#fff;">
+  <button type="button" class="btn btn-primary" onclick="useLatestWeight()" style="width:100%;margin-bottom:10px;background:#1976d2;">Input Ke Bruto</button>
+  <div id="logsTable" class="scale-logs">
     <em>Memuat log timbangan...</em>
   </div>
 </div>
@@ -302,7 +305,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 
 <div class="center">
-<button type="button" class="btn" onclick="calculate()">HITUNG</button>
+<button type="button" class="btn btn-success" onclick="calculate()">HITUNG</button>
 </div>
 <h1></h1>
 <hr>
@@ -314,7 +317,7 @@ input,select {width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;ma
 </div>
 </div>
 
-<button type="submit" class="btn">SIMPAN KE DATABASE</button>
+<button type="submit" class="btn btn-success"> SIMPAN </button>
 </form>
 
 <script src="/Project_3/Dasboard/js/Input_FIXED.js"></script>

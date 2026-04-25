@@ -177,188 +177,80 @@ $totals = $sum_stmt->fetch(PDO::FETCH_ASSOC) ?: ['b' => 0, 't' => 0, 'n' => 0];
 <title>Laporan</title>
 
 <style>
-/* ================= RESET KHUSUS WRAPPER ================= */
-.wrapper *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Segoe UI', sans-serif;
-}
-
-/* ================= WRAPPER ================= */
-.wrapper{
+/* Scoped: Laporan */
+.page-laporan{
     width:100%;
     max-width:100%;
     padding:15px;
     background:#eef2f7;
     font-size:13px;
+    box-sizing:border-box;
 }
-
-/* ================= CARD ================= */
-.card{
+.page-laporan .card{
     width:100%;
     background:#fff;
     border-radius:14px;
     padding:18px;
     box-shadow:0 6px 20px rgba(0,0,0,.08);
 }
-
-/* ================= TITLE ================= */
-.wrapper h3{
+.page-laporan h3{
     margin-bottom:12px;
     font-size:16px;
     font-weight:600;
 }
-
-/* ================= FILTER ================= */
-.filter-bar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    margin-bottom:12px;
-}
-
-.filter-group{
-    display:flex;
-    gap:6px;
-    align-items:center;
-}
-
-/* ================= INPUT ================= */
-.wrapper input,
-.wrapper select{
+.page-laporan input,
+.page-laporan select{
     padding:7px 10px;
     border:1px solid #d1d5db;
     border-radius:8px;
     font-size:12px;
     outline:none;
+    box-sizing:border-box;
 }
-
-.wrapper input:focus,
-.wrapper select:focus{
+.page-laporan input:focus,
+.page-laporan select:focus{
     border-color:#2563eb;
 }
-
-/* ================= BUTTON ================= */
-.btn{
-    padding:7px 12px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:12px;
-    transition:0.2s;
-}
-
-.btn:hover{
-    opacity:0.9;
-}
-
-.primary{background:#2563eb;color:#fff}
-.dark{background:#111827;color:#fff}
-.success{background:#16a34a;color:#fff}
-
-/* ================= TABLE ================= */
-.wrapper table{
+.page-laporan table{
     width:100%;
     border-collapse:collapse;
     font-size:12px;
 }
-
-.wrapper th{
+.page-laporan th{
     background:#111827;
     color:#fff;
     padding:8px;
     text-align:center;
 }
-
-.wrapper td{
+.page-laporan td{
     padding:7px;
     border-bottom:1px solid #ddd;
     text-align:center;
 }
-
-.wrapper tr:hover{
+.page-laporan tr:hover{
     background:#f1f5f9;
 }
-
-/* ================= SUMMARY ================= */
-.summary{
+.page-laporan .summary{
     margin:10px 0;
     font-weight:600;
 }
-
-/* ================= PAGINATION ================= */
-.pagination{
-    text-align:center;
-    margin-top:10px;
-}
-
-.pagination a{
-    padding:5px 9px;
-    background:#e5e7eb;
-    margin:2px;
-    text-decoration:none;
-    border-radius:6px;
-    color:#000;
-    font-size:12px;
-}
-
-.pagination a:hover{
-    background:#d1d5db;
-}
-
-.pagination .active{
-    background:#2563eb;
-    color:#fff;
-}
-
-/* ================= RESPONSIVE ================= */
 @media (max-width:768px){
-
-    .filter-bar{
-        flex-direction:column;
-        align-items:flex-start;
-    }
-
-    .filter-group{
-        width:100%;
-        flex-wrap:wrap;
-    }
-
-    .wrapper table{
-        font-size:11px;
-    }
-
-    .wrapper th,
-    .wrapper td{
-        padding:6px;
-    }
+    .page-laporan table{font-size:11px;}
+    .page-laporan th, .page-laporan td{padding:6px;}
 }
-
-/* ================= PRINT ================= */
 @media print{
-    .filter-bar,
-    .pagination,
-    .btn{
-        display:none;
-    }
-
-    .wrapper{
-        padding:0;
-        background:#fff;
-    }
-
-    .card{
-        box-shadow:none;
-        padding:0;
-    }
+    .page-laporan .filter-bar,
+    .page-laporan .pagination,
+    .page-laporon .btn{display:none;}
+    .page-laporan{padding:0;background:#fff;}
+    .page-laporan .card{box-shadow:none;padding:0;}
 }
 </style>
 </head>
 
 <body>
 
-<div class="wrapper">
+<div class="page-laporan">
 <div class="card">
 
 <h3>📊 Laporan Transaksi</h3>

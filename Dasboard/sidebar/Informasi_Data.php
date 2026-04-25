@@ -127,209 +127,82 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <title>Informasi Data - Transaksi</title>
 
 <style>
-/* ===============================
-   CSS TABEL TRANSAKSI FULL DATA
-   SEMUA KOLOM MUAT LAYAR
-=================================*/
-
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-/* CARD */
-.card{
+/* Scoped: Informasi Data */
+.page-informasi .card{
   background:#fff;
   border-radius:12px;
   padding:12px;
   box-shadow:0 3px 10px rgba(0,0,0,.08);
 }
 
-/* FILTER */
-input[type="date"],
-input[type="text"],
-input[type="number"],
-select{
+.page-informasi input[type="date"],
+.page-informasi input[type="text"],
+.page-informasi input[type="number"],
+.page-informasi select{
   width:100%;
   padding:8px 10px;
   border:1px solid #d1d5db;
   border-radius:6px;
   outline:none;
   font-size:12px;
+  box-sizing:border-box;
 }
 
-/* BUTTON */
-button,
-.btn{
-  border:none;
-  cursor:pointer;
-  border-radius:6px;
-  padding:8px 12px;
-  font-weight:600;
-  font-size:12px;
-}
-
-.btn-save{
-  background:#10b981;
-  color:#fff;
-  width:100%;
-}
-
-.btn-cancel{
-  background:#6b7280;
-  color:#fff;
-  width:100%;
-  margin-top:8px;
-}
-
-/* TABLE */
-.table-container{
-  margin-top:12px;
-  overflow-x:auto;
-  border-radius:10px;
-  box-shadow:0 3px 10px rgba(0,0,0,.08);
-  background:#fff;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  table-layout:auto; /* biar fleksibel semua tampil */
+.page-informasi .data-table{
+  table-layout:auto;
   font-size:11px;
 }
 
-thead tr{
-  background:#111827;
-}
-
-th{
-  color:#fff;
-  padding:8px 4px;
-  text-align:center;
-  font-weight:600;
-  white-space:nowrap;
-}
-
-td{
+.page-informasi .data-table th,
+.page-informasi .data-table td{
   padding:7px 4px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:center;
-  vertical-align:middle;
   white-space:nowrap;
 }
 
-tbody tr:hover{
-  background:#eff6ff;
-}
+.page-informasi th:nth-child(1), .page-informasi td:nth-child(1){ width:35px; }
+.page-informasi th:nth-child(2), .page-informasi td:nth-child(2){ width:45px; }
+.page-informasi th:nth-child(3), .page-informasi td:nth-child(3){ width:75px; }
+.page-informasi th:nth-child(4), .page-informasi td:nth-child(4){ width:95px; }
+.page-informasi th:nth-child(5), .page-informasi td:nth-child(5){ width:80px; }
+.page-informasi th:nth-child(6), .page-informasi td:nth-child(6){ width:110px; }
+.page-informasi th:nth-child(7), .page-informasi td:nth-child(7){ width:95px; }
+.page-informasi th:nth-child(8), .page-informasi td:nth-child(8){ width:95px; }
+.page-informasi th:nth-child(9), .page-informasi td:nth-child(9){ width:75px; }
+.page-informasi th:nth-child(10), .page-informasi td:nth-child(10){ width:75px; }
+.page-informasi th:nth-child(11), .page-informasi td:nth-child(11){ width:70px; text-align:right; }
+.page-informasi th:nth-child(12), .page-informasi td:nth-child(12){ width:70px; text-align:right; }
+.page-informasi th:nth-child(13), .page-informasi td:nth-child(13){ width:80px; text-align:right; }
+.page-informasi th:nth-child(14), .page-informasi td:nth-child(14){ width:115px; }
 
-/* KOLOM KECIL */
-th:nth-child(1), td:nth-child(1){width:35px;}
-th:nth-child(2), td:nth-child(2){width:45px;}
-th:nth-child(3), td:nth-child(3){width:75px;}
-th:nth-child(4), td:nth-child(4){width:95px;}
-th:nth-child(5), td:nth-child(5){width:80px;}
-th:nth-child(6), td:nth-child(6){width:110px;}
-th:nth-child(7), td:nth-child(7){width:95px;}
-th:nth-child(8), td:nth-child(8){width:95px;}
-th:nth-child(9), td:nth-child(9){width:75px;}
-th:nth-child(10), td:nth-child(10){width:75px;}
-th:nth-child(11), td:nth-child(11){width:70px; text-align:right;}
-th:nth-child(12), td:nth-child(12){width:70px; text-align:right;}
-th:nth-child(13), td:nth-child(13){width:80px; text-align:right;}
-th:nth-child(14), td:nth-child(14){width:115px;}
-
-/* NETTO */
-.netto{
+.page-informasi .netto{
   color:#10b981;
   font-weight:700;
 }
 
-/* ACTION */
-.edit,
-.hapus{
+.page-informasi .edit-btn,
+.page-informasi .delete-btn{
   font-size:10px;
   padding:5px 7px;
-  border:none;
-  border-radius:5px;
-  color:#fff;
-  margin:1px;
 }
 
-.edit{ background:#f59e0b; }
-.hapus{ background:#ef4444; }
-
-/* FORM */
-.form-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100vh;
-  background:rgba(0,0,0,.45);
-  display:none;
-  z-index:1000;
+.page-informasi .form-slide{
+  right:-360px;
+  width:360px;
+  padding:18px;
 }
-
-.form-overlay.active{
+.page-informasi .form-slide.active{
+  right:0;
+}
+.page-informasi .form-overlay.active{
   display:block;
 }
 
-.form-slide{
-  position:fixed;
-  top:0;
-  right:-360px;
-  width:360px;
-  height:100vh;
-  background:#fff;
-  padding:18px;
-  overflow-y:auto;
-  box-shadow:-5px 0 20px rgba(0,0,0,.15);
-  transition:.3s;
-  z-index:1001;
-}
-
-.form-slide.active{
-  right:0;
-}
-
-/* TOAST */
-.message{
-  position:fixed;
-  top:15px;
-  right:15px;
-  padding:10px 14px;
-  color:#fff;
-  border-radius:8px;
-  z-index:9999;
-  font-size:12px;
-  font-weight:600;
-}
-
-.success{ background:#10b981; }
-.error{ background:#ef4444; }
-
-/* MOBILE */
 @media(max-width:768px){
-
-  body{
-    padding:6px;
-  }
-
-  table{
-    font-size:10px;
-  }
-
-  th,td{
-    padding:6px 3px;
-  }
-
-  .form-slide{
+  .page-informasi .form-slide{
     width:100%;
     right:-100%;
   }
-
-  .form-slide.active{
+  .page-informasi .form-slide.active{
     right:0;
   }
 }
@@ -338,27 +211,19 @@ th:nth-child(14), td:nth-child(14){width:115px;}
 
 <body>
 
+<div class="page-informasi">
 <div class="card">
-
-<!--<div class="header">
-<h1>📊 Informasi Data Transaksi</h1>
-<p>Kelola data transaksi lengkap dengan cari & CRUD</p>
-
-<button class="btn" onclick="openAdd()" style="background:#10b981;color:white;padding:12px 24px;border:none;border-radius:10px;font-size:16px;cursor:pointer;margin-bottom:20px;">➕ Tambah Transaksi</button>
-</div>--->
-
-
 
 <!-- FILTER -->
 <div style="display:flex;gap:10px;margin-bottom:20px;">
 <input type="date" name="tgl" id="tgl" value="<?= $tgl ?>" onchange="loadTable()">
 <input type="text" name="search" id="search" placeholder="🔍 Cari No Record / Sopir / Supplier / Material..." value="<?= htmlspecialchars($search) ?>" oninput="debounceSearch()">
-<button onclick="loadTable()" style="background:#2563eb;color:white;padding:11px 20px;border:none;border-radius:10px;cursor:pointer;">Cari</button>
+<button onclick="loadTable()" class="btn btn-primary" style="padding:8px 16px;font-size:12px;">Cari</button>
 </div>
 
 <!-- TABLE -->
 <div class="table-container">
-<table>
+<table class="data-table">
 <thead>
 <tr>
 <th>No</th>
@@ -394,8 +259,8 @@ th:nth-child(14), td:nth-child(14){width:115px;}
 <td style="text-align:right;"><?= number_format($d['tara']) ?></td>
 <td class="netto" style="font-weight:bold;color:#10b981;"><?= number_format($d['netto']/1000,2) ?> </td>
 <td>
-<button class="edit" onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>✏️ EDIT</button>
-<button class="hapus" onclick="hapus(<?= (int)$d['id_transaksi'] ?>)">🗑 HAPUS</button>
+<button class="edit-btn" onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>✏️ EDIT</button>
+<button class="delete-btn" onclick="hapus(<?= (int)$d['id_transaksi'] ?>)">🗑 HAPUS</button>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -455,9 +320,11 @@ th:nth-child(14), td:nth-child(14){width:115px;}
 <label>Netto (kg):</label>
 <input type="number" name="netto" id="netto" readonly>
 
-<button type="submit" class="btn btn-save">💾 Simpan</button>
-<button type="button" class="btn btn-cancel" onclick="closeForm()">❌ Batal</button>
+<button type="submit" class="btn btn-save" style="width:100%;">💾 Simpan</button>
+<button type="button" class="btn-cancel-form" onclick="closeForm()">❌ Batal</button>
 </form>
+</div>
+</div>
 </div>
 
 <script>
@@ -473,7 +340,7 @@ const BASE_URL = window.location.pathname.includes('Informasi_Data.php') ? '' : 
 
 // ===== FORM CONTROL =====
 function openForm() { slide.classList.add('active'); overlay.classList.add('active'); }
-function closeForm() { 
+window.closeForm = function() { 
     slide.classList.remove('active'); 
     overlay.classList.remove('active'); 
     form.reset(); 
@@ -492,17 +359,18 @@ window.openAdd = function() {
 
 // ===== EDIT =====
 window.openEdit = function(d) {
+    console.log('openEdit called', d);
     document.getElementById('action').value = 'edit';
     document.getElementById('id').value = d.id_transaksi;
-    document.getElementById('no_record').value = d.no_record;
-    document.getElementById('id_kendaraan').value = d.id_kendaraan;
-    document.getElementById('id_supplier').value = d.id_supplier;
-    document.getElementById('id_material').value = d.id_material;
-    document.getElementById('id_customers').value = d.id_customers;
-    document.getElementById('bruto').value = d.bruto;
-    document.getElementById('tara').value = d.tara;
-    document.getElementById('netto').value = d.netto;
-    title.innerText = 'Edit Transaksi ' + d.no_record;
+    document.getElementById('no_record').value = d.no_record || '';
+    document.getElementById('id_kendaraan').value = d.id_kendaraan || '';
+    document.getElementById('id_supplier').value = d.id_supplier || '';
+    document.getElementById('id_material').value = d.id_material || '';
+    document.getElementById('id_customers').value = d.id_customers || '';
+    document.getElementById('bruto').value = d.bruto || '';
+    document.getElementById('tara').value = d.tara || '';
+    document.getElementById('netto').value = d.netto || '';
+    title.innerText = 'Edit Transaksi ' + (d.no_record || '');
     openForm();
 }
 
@@ -576,7 +444,7 @@ document.getElementById('bruto').oninput = document.getElementById('tara').oninp
 // ===== MESSAGE TOAST =====
 function show(msg, success=true) {
     let div = document.createElement('div');
-    div.className = `message ${success ? 'success' : 'error'} show`;
+    div.className = `message-toast ${success ? 'success' : 'error'} show`;
     div.textContent = msg;
     document.body.appendChild(div);
     setTimeout(()=>div.remove(), 4000);
@@ -589,3 +457,4 @@ loadTable();
 
 </body>
 </html>
+

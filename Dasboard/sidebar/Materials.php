@@ -66,226 +66,30 @@ $data = $pdo->query("SELECT * FROM material ORDER BY id_Material DESC")->fetchAl
 <title>Materials</title>
 
 <style>
-/* CSS STANDARDIZED - MATERIALS RAPIH */
-:root{
-  --primary:#10b981;
-  --danger:#ef4444;
-  --warning:#f59e0b;
-  --dark:#374151;
-  --light:#f3f4f6;
-  --shadow:0 4px 6px rgba(0,0,0,.1);
-  --form-slide-width:350px;
-}
-
-
-/* BUTTON */
-.btn{
-  background:var(--primary);
-  color:#fff;
-  padding:10px 20px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:600;
-}
-
-/* TABLE CONTAINER */
-.table-container{
-  background:#fff;
-  border-radius:12px;
-  margin-top:20px;
-  overflow-x:auto;
-  box-shadow:var(--shadow);
-}
-
-/* TABLE FIXED ALIGN */
-table{
-  width:100%;
-  border-collapse:collapse;
-  table-layout:fixed;
-}
-
-/* HEADER */
-thead tr{
-  background:#374151;
-}
-
-th{
-  color:#fff;
-  padding:12px;
-  text-align:center;
-  font-size:14px;
-  font-weight:600;
-  border:1px solid #2b3440;
-}
-
-/* BODY CELL */
-td{
-  padding:10px;
-  border:1px solid #eee;
-  font-size:13px;
-  text-align:center;
-  vertical-align:middle;
-
-  /* FIX BIAR TIDAK BERANTAKAN */
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-/* KOLOM LEBIH STABIL */
-th:nth-child(1),
-td:nth-child(1){
-  width:60px;
-}
-
-th:nth-child(2),
-td:nth-child(2){
-  width:150px;
-}
-
-th:nth-child(3),
-td:nth-child(3){
-  text-align:left;
-  width:auto;
-}
-
-th:nth-child(4),
-td:nth-child(4){
-  width:160px;
-}
-
-/* HOVER */
-tbody tr:hover{
-  background:#f3f4f6;
-}
-
-/* ACTION BUTTON */
-.edit,
-.hapus{
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  color:#fff;
-  cursor:pointer;
-  font-size:12px;
-  margin:2px;
-}
-
-.edit{ background:#f59e0b; }
-.hapus{ background:#ef4444; }
-
-/* FORM */
-.form-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100vh;
-  background:rgba(0,0,0,.5);
-  display:none;
-  z-index:1000;
-}
-
-.form-overlay.active{
-  display:block;
-}
-
-.form-slide{
-  position:fixed;
-  right:calc(-1 * var(--form-slide-width));
-  top:0;
-  width:var(--form-slide-width);
-  height:100vh;
-  background:#fff;
-  padding:24px;
-  transition:.3s;
-  z-index:1001;
-  box-shadow:-4px 0 20px rgba(0,0,0,.15);
-  overflow-y:auto;
-}
-
-.form-slide.active{
-  right:0;
-}
-
-input{
-  width:100%;
-  padding:10px;
-  margin-bottom:10px;
-  border:1px solid #ddd;
-  border-radius:6px;
-  box-sizing:border-box;
-}
-
-/* FORM BUTTON */
-.btn-save{
-  background:#10b981;
-  color:#fff;
-  padding:10px;
-  width:100%;
-  border:none;
-  border-radius:8px;
-}
-
-.btn-cancel{
-  background:#6b7280;
-  color:#fff;
-  padding:10px;
-  width:100%;
-  border:none;
-  border-radius:8px;
-  margin-top:10px;
-}
-
-/* MESSAGE */
-.message{
-  position:fixed;
-  top:20px;
-  right:20px;
-  padding:15px;
-  border-radius:10px;
-  color:#fff;
-  z-index:9999;
-}
-
-.success{
-  background:#10b981;
-}
-
-.error{
-  background:#ef4444;
-}
-
-.btn-print{
-  background: #0494e7;   /* KUNING */
-  color:#fff;
-  padding:10px 20px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:600;
-  margin-left:5px;
-}
-
-.btn-print:hover{
-  background:#87CEEB;
-}
-
+/* Scoped: Materials */
+.page-materials th:nth-child(1),
+.page-materials td:nth-child(1){ width:60px; text-align:center; }
+.page-materials th:nth-child(2),
+.page-materials td:nth-child(2){ width:180px; text-align:center; }
+.page-materials th:nth-child(3),
+.page-materials td:nth-child(3){ text-align:left; padding-left:15px; }
+.page-materials th:nth-child(4),
+.page-materials td:nth-child(4){ width:180px; text-align:center; }
 </style>
 </head>
 
 <body>
 
+<div class="page-materials">
 <div id="messageContainer"></div>
-<button class="btn" onclick="openAdd()">+ Tambah Material</button>
+<button class="btn btn-success" onclick="openAdd()">+ Tambah Material</button>
 
 <a href="/Project_3/Dasboard/Laporan/laporan_material.php" target="_blank">
-    <button class="btn-print">🖨 Print Material</button>
+    <button class="btn btn-print">🖨 Print Material</button>
 </a>
 
 <div class="table-container">
-<table>
+<table class="data-table">
 <thead>
 <tr>
 <th>No</th>
@@ -302,10 +106,10 @@ input{
 <td><?= htmlspecialchars($d['Kode']) ?></td>
 <td><?= htmlspecialchars($d['Material']) ?></td>
 <td>
-<button class="edit"
+<button class="edit-btn"
 onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'> EDIT </button>
 
-<button class="hapus"
+<button class="delete-btn"
 onclick="hapus(<?= (int)$d['id_Material'] ?>)"> HAPUS </button>
 </td>
 </tr>
@@ -329,8 +133,9 @@ onclick="hapus(<?= (int)$d['id_Material'] ?>)"> HAPUS </button>
 <input type="text" name="nama" id="nama" placeholder="Nama Material" required>
 
 <button type="submit" class="btn-save">Simpan</button>
-<button type="button" class="btn-cancel" onclick="closeForm()">Batal</button>
+<button type="button" class="btn-cancel-form" onclick="closeForm()">Batal</button>
 </form>
+</div>
 </div>
 
 <script>
@@ -438,9 +243,11 @@ function loadTable(){
 // ===== MESSAGE =====
 function show(msg, ok=true){
     let d=document.createElement('div');
-    d.className='message '+(ok?'success':'error');
+    d.className='message-toast '+(ok?'success':'error');
     d.innerText=msg;
     document.body.appendChild(d);
+    void d.offsetWidth;
+    d.classList.add('show');
     setTimeout(()=>d.remove(),3000);
 }
 
@@ -451,3 +258,4 @@ function show(msg, ok=true){
 
 </body>
 </html>
+
