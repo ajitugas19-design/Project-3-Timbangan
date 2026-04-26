@@ -245,6 +245,21 @@ $totals = $sum_stmt->fetch(PDO::FETCH_ASSOC) ?: ['b' => 0, 't' => 0, 'n' => 0];
     .page-laporan{padding:0;background:#fff;}
     .page-laporan .card{box-shadow:none;padding:0;}
 }
+/* BUTTON STYLE */
+.page-laporan .btn{
+    padding:7px 12px;
+    border:none;
+    border-radius:8px;
+    font-size:12px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+/* warna tombol */
+.page-laporan .btn.primary{ background:#2563eb; color:#fff; }
+.page-laporan .btn.dark{ background:#374151; color:#fff; }
+.page-laporan .btn.success{ background:#16a34a; color:#fff; }
+.page-laporan .btn:hover{ opacity:0.85; }
 </style>
 </head>
 
@@ -279,25 +294,18 @@ $totals = $sum_stmt->fetch(PDO::FETCH_ASSOC) ?: ['b' => 0, 't' => 0, 'n' => 0];
 </div>
 
 <div class="filter-group">
-<select id="export_limit">
-<option value="10">10 Data</option>
-<option value="25">25 Data</option>
-<option value="50">50 Data</option>
-<option value="all">Semua</option>
-</select>
-
-<select id="print_limit">
-<option value="10">10 Data</option>
-<option value="25">25 Data</option>
-<option value="50">50 Data</option>
-<option value="all">Semua</option>
+<select id="limit_export_all">
+    <option value="10">10 Data</option>
+    <option value="25">25 Data</option>
+    <option value="50">50 Data</option>
+    <option value="all">Semua</option>
 </select>
 
 
 <button class="btn primary" onclick="exportPDF()">📄 PDF</button>
 <button class="btn dark" onclick="exportWord()">📝 Word</button>
 <button class="btn success" onclick="exportExcel()">📊 Excel</button>
-<button class="btn" onclick="printData()">🖨️ Print</button>
+<button class="btn dark" onclick="printData()">🖨️ Print</button>
 </div>
 
 </div>
@@ -365,7 +373,7 @@ function loadTable(page=1){
 let d=document.getElementById('dari').value;
 let s=document.getElementById('sampai').value;
 let q=document.getElementById('search').value;
-let l=document.getElementById('limit').value;
+let l = document.getElementById('limit_export_all').value;
 
 fetch(`sidebar/Laporan.php?page=${page}&dari=${d}&sampai=${s}&search=${q}&limit=${l}`)
 .then(res => {
@@ -401,7 +409,7 @@ function printData(){
 let d = document.getElementById('dari').value;
 let s = document.getElementById('sampai').value;
 let q = document.getElementById('search').value;
-let l = document.getElementById('print_limit').value;
+let l = document.getElementById('limit_export_all').value;
 
 let iframe = document.createElement('iframe');
 iframe.style.display = 'none';
@@ -421,7 +429,7 @@ function exportPDF(){
 let d = document.getElementById('dari').value;
 let s = document.getElementById('sampai').value;
 let q = document.getElementById('search').value;
-let l = document.getElementById('export_limit').value;
+let l = document.getElementById('limit_export_all').value;
 
 /* FIX */
 window.open(`/Project_3/Dasboard/Laporan/laporan_pdf.php?dari=${d}&sampai=${s}&search=${q}&limit=${l}`, '_blank');
@@ -432,7 +440,7 @@ function exportWord(){
 let d = document.getElementById('dari').value;
 let s = document.getElementById('sampai').value;
 let q = document.getElementById('search').value;
-let l = document.getElementById('export_limit').value;
+let l = document.getElementById('limit_export_all').value;
 
 /* FIX */
 window.location.href = `/Project_3/Dasboard/Laporan/laporan_word.php?dari=${d}&sampai=${s}&search=${q}&limit=${l}`;

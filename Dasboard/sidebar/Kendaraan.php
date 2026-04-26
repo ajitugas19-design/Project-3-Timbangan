@@ -106,7 +106,7 @@ $data = $pdo->query("SELECT * FROM kendaraan ORDER BY id_Kendaraan DESC")->fetch
 onclick='openEdit(<?= json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'> EDIT </button>
 
 <button class="delete-btn"
-onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>")>HAPUS</button>
+onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>)">HAPUS</button>
 </td>
 </tr>
 <?php endforeach; ?>
