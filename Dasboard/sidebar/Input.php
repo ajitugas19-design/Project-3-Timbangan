@@ -320,7 +320,14 @@ if (isset($_GET['edit']) && isLoggedIn()) {
 <button type="submit" class="btn btn-success"> SIMPAN </button>
 </form>
 
+<script src="/Project_3/Dasboard/js/enter-next.js"></script>
 <script src="/Project_3/Dasboard/js/Input_FIXED.js"></script>
+<script>
+(function(){
+  const form = document.querySelector('form');
+  if (form && typeof initEnterNext === 'function') initEnterNext(form);
+})();
+</script>
 </body>
 </html>
 

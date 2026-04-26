@@ -172,7 +172,7 @@ $users = $pdo->query("SELECT * FROM user ORDER BY nama")->fetchAll(PDO::FETCH_AS
 <td>
 <div class="action">
 <button class="edit-btn" onclick='openEdit(<?= json_encode($u) ?>)'> Edit</button>
-<button class="delete-btn" onclick="hapus(<?= $u['id_user'] ?>")> Hapus</button>
+<button class="delete-btn" onclick="hapus(<?= $u['id_user'] ?>)"> Hapus</button>
 </div>
 </td>
 </tr>
@@ -204,6 +204,7 @@ $users = $pdo->query("SELECT * FROM user ORDER BY nama")->fetchAll(PDO::FETCH_AS
 </form>
 </div>
 
+<script src="/Project_3/Dasboard/js/enter-next.js"></script>
 <script>
 (function(){
 const BASE_URL = 'sidebar/User.php';
@@ -212,6 +213,8 @@ const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
 const tbody = document.getElementById('tbody');
 const title = document.getElementById('title');
+
+if (typeof initEnterNext === 'function') initEnterNext(form);
 
 // ===== FORM TOGGLE =====
 function openForm() {

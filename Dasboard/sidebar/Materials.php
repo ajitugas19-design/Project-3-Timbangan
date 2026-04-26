@@ -50,6 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         exit;
 
+    } catch (PDOException $e) {
+        if ($e->getCode() == 23000 || strpos($e->getMessage(), '1451') !== false) {
+            echo json_encode(['success'=>false,'message'=>'❌ Data masih digunakan dalam transaksi, tidak bisa dihapus']);
+        } else {
+            echo json_encode(['success'=>false,'message'=>'❌ '.$e->getMessage()]);
+        }
+        exit;
     } catch (Exception $e) {
         echo json_encode(['success'=>false,'message'=>'❌ '.$e->getMessage()]);
         exit;
@@ -58,6 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ================= LOAD DATA =================
 $data = $pdo->query("SELECT * FROM material ORDER BY id_Material DESC")->fetchAll(PDO::FETCH_ASSOC);
+
+if (isset($_GET['json'])) {
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -138,6 +152,7 @@ onclick="hapus(<?= (int)$d['id_Material'] ?>)"> HAPUS </button>
 </div>
 </div>
 
+<script src="/Project_3/Dasboard/js/enter-next.js"></script>
 <script>
 (function(){
 
@@ -145,6 +160,8 @@ const form = document.getElementById('form');
 const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
 const tbody = document.getElementById('tbody');
+
+if (typeof initEnterNext === 'function') initEnterNext(form);
 
 // ===== URL FIX =====
 const BASE_URL = window.location.pathname.includes('Materials.php')
@@ -209,6 +226,24 @@ window.hapus = function(id){
     });
 }
 
+window.openEditById = function(id){
+    fetch(BASE_URL + '?json=1')
+    .then(r=>r.json())
+    .then(rows=>{
+        const d = rows.find(x => x.id_Material == id);
+        if(!d) return;
+
+        form.reset();
+        form.action.value = 'edit';
+        form.id.value = d.id_Material;
+        form.kode.value = d.Kode;
+        form.nama.value = d.Material;
+
+        document.getElementById('title').innerText = 'Edit Material';
+        openForm();
+    });
+}
+
 // ===== SUBMIT =====
 form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -231,13 +266,40 @@ form.addEventListener('submit', function(e){
 
 // ===== RELOAD TABLE =====
 function loadTable(){
-    fetch(BASE_URL)
-    .then(r=>r.text())
-    .then(html=>{
-        const doc = new DOMParser().parseFromString(html,'text/html');
-        const newTbody = doc.getElementById('tbody');
-        if (newTbody) tbody.innerHTML = newTbody.innerHTML;
+    fetch(BASE_URL + '?json=1')
+    .then(r=>r.json())
+    .then(rows=>{
+        let html = '';
+        let no = 1;
+
+        rows.forEach(d=>{
+            html += `
+            <tr>
+                <td>${no++}</td>
+                <td>${escapeHtml(d.Kode)}</td>
+                <td>${escapeHtml(d.Material)}</td>
+                <td>
+                    <button class="edit-btn"
+                    onclick="openEditById(${d.id_Material})"> EDIT </button>
+
+                    <button class="delete-btn"
+                    onclick="hapus(${d.id_Material})"> HAPUS </button>
+                </td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
     });
+}
+
+function escapeHtml(text){
+    if(!text) return '';
+    return text
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
 }
 
 // ===== MESSAGE =====
@@ -252,8 +314,6 @@ function show(msg, ok=true){
 }
 
 })();
-
-
 </script>
 
 </body>

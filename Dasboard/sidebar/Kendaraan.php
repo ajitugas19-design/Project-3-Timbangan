@@ -133,6 +133,7 @@ onclick="hapus(<?= (int)$d['id_Kendaraan'] ?>")>HAPUS</button>
 </div>
 </div>
 
+<script src="/Project_3/Dasboard/js/enter-next.js"></script>
 <script>
 (function(){
 
@@ -140,6 +141,8 @@ const form = document.getElementById('form');
 const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
 const tbody = document.getElementById('tbody');
+
+if (typeof initEnterNext === 'function') initEnterNext(form);
 
 const BASE_URL = window.location.pathname.includes('Kendaraan.php')
   ? ''

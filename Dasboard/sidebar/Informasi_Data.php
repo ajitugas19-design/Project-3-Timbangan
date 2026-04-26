@@ -327,6 +327,7 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 </div>
 
+<script src="/Project_3/Dasboard/js/enter-next.js"></script>
 <script>
 (function(){
 const form = document.getElementById('form');
@@ -334,6 +335,9 @@ const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
 const tbody = document.getElementById('tbody');
 const title = document.getElementById('title');
+
+// Enter to next input
+if (typeof initEnterNext === 'function') initEnterNext(form);
 
 // BASE URL untuk AJAX
 const BASE_URL = window.location.pathname.includes('Informasi_Data.php') ? '' : 'sidebar/Informasi_Data.php';

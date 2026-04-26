@@ -146,6 +146,7 @@ HAPUS
 </div>
 </div>
 
+<script src="/Project_3/Dasboard/js/enter-next.js"></script>
 <script>
 (function(){
 
@@ -154,6 +155,8 @@ const overlay = document.getElementById('overlay');
 const slide = document.getElementById('slide');
 const tbody = document.getElementById('tbody');
 const title = document.getElementById('title');
+
+if (typeof initEnterNext === 'function') initEnterNext(form);
 
 const BASE_URL = window.location.pathname.includes('Suppliers.php')
   ? ''
